@@ -1,0 +1,22 @@
+{
+  "name": "concurrent-top-level-await-plugins",
+  "private": true,
+  "description": "Bundler plugins enabling concurrent execution of modules that contain top level await.",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zOadT/concurrent-top-level-await-plugins.git"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "author": "Oliver Zell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zOadT/concurrent-top-level-await-plugins/issues"
+  },
+  "homepage": "https://github.com/zOadT/concurrent-top-level-await-plugins#readme"
+}
