@@ -20,11 +20,7 @@ importers:
         specifier: ^4.0.15
         version: 4.0.15
 
-  packages/rollup-plugin:
-    dependencies:
-      magic-string:
-        specifier: ^0.30.21
-        version: 0.30.21
+  packages/rollup-plugin: {}
 
 packages:
   "@babel/generator@7.28.5":
