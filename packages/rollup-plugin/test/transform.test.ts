@@ -215,4 +215,390 @@ describe("transform", () => {
 				`);
 		});
 	});
+
+	describe("exports", () => {
+		describe("function declaration exports", () => {
+			it("handles default exports", async () => {
+				const code = `
+					export default function a() {
+						return 123;
+					}
+					console.log('A');
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"export default function a() {
+						return 123;
+					}
+					async function __exec() {
+						console.log("A");
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+
+			it("handles named export", async () => {
+				const code = `
+					export function a() {
+						return 123;
+					}
+					console.log('A');
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+						"export function a() {
+							return 123;
+						}
+						async function __exec() {
+							console.log("A");
+						}
+						const __tla = __exec();
+						const __todo = __tla;
+						if (import.meta.useTla) await __todo;
+						export function __tla_access() {
+							return __tla;
+						}
+						"
+					`);
+			});
+		});
+
+		describe("class declaration exports", () => {
+			describe("handles default exports", () => {
+				it("without decorator", async () => {
+					const code = `
+						export default class A {
+							method() {
+								return 123;
+							}
+						}
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export default class A {
+								method() {
+									return 123;
+								}
+							}
+							async function __exec() {
+								console.log("A");
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("with decorator", async () => {
+					const code = `
+						export default @decorator class A {
+							method() {
+								return 123;
+							}
+						}
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export default
+							@decorator
+							class A {
+								method() {
+									return 123;
+								}
+							}
+							async function __exec() {
+								console.log("A");
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+			});
+
+			describe("handles named export", () => {
+				it("without decorator", async () => {
+					const code = `
+						export class A {
+							method() {
+								return 123;
+							}
+						}
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export class A {
+								method() {
+									return 123;
+								}
+							}
+							async function __exec() {
+								console.log("A");
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("with decorator", async () => {
+					const code = `
+						export @decorator class A {
+							method() {
+								return 123;
+							}
+						}
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export
+							@decorator
+							class A {
+								method() {
+									return 123;
+								}
+							}
+							async function __exec() {
+								console.log("A");
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+			});
+		});
+
+		describe("variable exports", () => {
+			describe("default exports", () => {
+				it("handles kind let", async () => {
+					const code = `
+						export default "a";
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export default "a";
+							async function __exec() {}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+			});
+
+			describe("named exports", () => {
+				it("handles kind let", async () => {
+					const code = `
+						export let a = 1, b = 2;
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export let a, b;
+							async function __exec() {
+								((a = 1), (b = 2));
+								console.log("A");
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("handles kind const", async () => {
+					const code = `
+						export const a = 1, b = 2;
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export let a, b;
+							async function __exec() {
+								((a = 1), (b = 2));
+								console.log("A");
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("handles kind var", async () => {
+					const code = `
+						export var a = 1, b = 2;
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export var a, b;
+							async function __exec() {
+								((a = 1), (b = 2));
+								console.log("A");
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+			});
+
+			describe("handles export {} syntax", () => {
+				it("handles named export list", async () => {
+					const code = `
+						export { a, b as c };
+					`;
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export { a, b as c };
+							async function __exec() {}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("handles re-export", async () => {
+					const code = `
+						export { foo, default as def } from './mod';
+					`;
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"export { foo, default as def } from "./mod";
+							async function __exec() {}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+			});
+		});
+
+		describe("export * syntax", () => {
+			it("handles export * from syntax", async () => {
+				const code = `
+					export * from 'module';
+					console.log('A');
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+						"export * from "module";
+						async function __exec() {
+							console.log("A");
+						}
+						const __tla = __exec();
+						const __todo = __tla;
+						if (import.meta.useTla) await __todo;
+						export function __tla_access() {
+							return __tla;
+						}
+						"
+					`);
+			});
+
+			it("handles export * as from syntax", async () => {
+				const code = `
+					export * as ident from 'module';
+					console.log('A');
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+						"export * as ident from "module";
+						async function __exec() {
+							console.log("A");
+						}
+						const __tla = __exec();
+						const __todo = __tla;
+						if (import.meta.useTla) await __todo;
+						export function __tla_access() {
+							return __tla;
+						}
+						"
+					`);
+			});
+		});
+	});
+
+	describe("variable declarations", () => {
+		it("handles simple case", async () => {
+			const code = `
+				const a = 1, b = 2;
+			`;
+
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+				"let a, b;
+				async function __exec() {
+					((a = 1), (b = 2));
+				}
+				const __tla = __exec();
+				const __todo = __tla;
+				if (import.meta.useTla) await __todo;
+				export function __tla_access() {
+					return __tla;
+				}
+				"
+			`);
+		});
+	});
 });
