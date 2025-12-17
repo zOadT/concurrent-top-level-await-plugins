@@ -492,6 +492,32 @@ describe("transform", () => {
 							"
 						`);
 				});
+
+				it("handles destructuring", async () => {
+					const code = `
+						export const { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
+						export const [x, [y, z]] = [1, [2, 3]];
+						console.log('A');
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+						"export let a, b;
+						export let x, y, z;
+						async function __exec() {
+							({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
+							[x, [y, z]] = [1, [2, 3]];
+							console.log("A");
+						}
+						const __tla = __exec();
+						const __todo = __tla;
+						if (import.meta.useTla) await __todo;
+						export function __tla_access() {
+							return __tla;
+						}
+						"
+					`);
+				});
 			});
 
 			describe("handles export {} syntax", () => {
@@ -599,6 +625,136 @@ describe("transform", () => {
 				}
 				"
 			`);
+		});
+
+		describe("with object destructuring", () => {
+			it("handles object destructuring", async () => {
+				const code = `
+					const { a, c: b = 3 } = { a: 1, c: 2 };
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"let a, b;
+					async function __exec() {
+						({ a, c: b = 3 } = { a: 1, c: 2 });
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+
+			it("handles nested destructuring", async () => {
+				const code = `
+					const { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"let a, b;
+					async function __exec() {
+						({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+
+			it("handles rest property", async () => {
+				const code = `
+					const { a, ...b } = { a: 1, c: 2, d: 3 };
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"let a, b;
+					async function __exec() {
+						({ a, ...b } = { a: 1, c: 2, d: 3 });
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+		});
+
+		describe("with array destructuring", () => {
+			it("handles array destructuring", async () => {
+				const code = `
+					const [a, b = 3] = [1, 2];
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"let a, b;
+					async function __exec() {
+						[a, b = 3] = [1, 2];
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+
+			it("handles nested array destructuring", async () => {
+				const code = `
+					const [a, [b, c]] = [1, [2, 3]];
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"let a, b, c;
+					async function __exec() {
+						[a, [b, c]] = [1, [2, 3]];
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+
+			it("handles rest element", async () => {
+				const code = `
+					const [a, ...b] = [1, 2, 3];
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"let a, b;
+					async function __exec() {
+						[a, ...b] = [1, 2, 3];
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
 		});
 	});
 });

@@ -119,7 +119,12 @@ function moveVarDeclarationToModuleScope(
 	declarationsEnd: number,
 ) {
 	const kind = replaceConstWithLet(node.kind);
-	const names = node.declarations.map((decl) => getNames(decl.id)).join(", ");
+	const names = node.declarations
+		.flatMap((decl) => getNames(decl.id))
+		.join(", ");
+	// surround with () for destructuring
+	s = s.appendRight(node.declarations[0].start, "(");
+	s = s.appendLeft(node.declarations[node.declarations.length - 1].end, ")");
 	// TODO appendLeft/right?
 	s = s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
 	s = s.remove(node.start, node.declarations[0].start);
@@ -133,9 +138,26 @@ function replaceConstWithLet<T extends string>(value: T): T | "let" {
 	return value;
 }
 
-function getNames(pattern: Pattern) {
-	if (pattern.type === "Identifier") {
-		return pattern.name;
+function getNames(pattern: Pattern): string[] {
+	switch (pattern.type) {
+		case "Identifier":
+			return [pattern.name];
+		case "MemberExpression":
+			throw new Error("Unexpected member expression in variable declaration");
+		case "ObjectPattern":
+			return pattern.properties.flatMap((p) => {
+				switch (p.type) {
+					case "Property":
+						return getNames(p.value);
+					case "RestElement":
+						return getNames(p.argument);
+				}
+			});
+		case "ArrayPattern":
+			return pattern.elements.filter((e) => e != null).flatMap(getNames);
+		case "RestElement":
+			return getNames(pattern.argument);
+		case "AssignmentPattern":
+			return getNames(pattern.left);
 	}
-	throw new Error("Destructuring not supported yet");
 }
