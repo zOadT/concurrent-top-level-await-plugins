@@ -62,8 +62,8 @@ function tansformAndMoveDeclarationsToModuleScope(
 	let i = 0;
 	for (const node of ast.body) {
 		// add __tla import
-		if (asyncImports.includes(node)) {
-			const tlaImport = `;import { __tla_access as __tla${i}} from '${node.source.value}';`;
+		if (asyncImports.includes(node as ImportDeclaration)) {
+			const tlaImport = `;import { __tla_access as __tla${i}} from '${(node as ImportDeclaration).source.value}';`;
 			s = s.appendLeft(node.end, tlaImport);
 			i++;
 		}
@@ -107,7 +107,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 }
 
 function isDeclaration(
-	type: string,
+	type?: string,
 ): type is "ClassDeclaration" | "FunctionDeclaration" {
 	return type === "ClassDeclaration" || type === "FunctionDeclaration";
 }
@@ -123,11 +123,11 @@ function moveVarDeclarationToModuleScope(
 		.flatMap((decl) => getNames(decl.id))
 		.join(", ");
 	// surround with () for destructuring
-	s = s.appendRight(node.declarations[0].start, "(");
-	s = s.appendLeft(node.declarations[node.declarations.length - 1].end, ")");
+	s = s.appendRight(node.declarations[0]!.start, "(");
+	s = s.appendLeft(node.declarations[node.declarations.length - 1]!.end, ")");
 	// TODO appendLeft/right?
 	s = s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
-	s = s.remove(node.start, node.declarations[0].start);
+	s = s.remove(node.start, node.declarations[0]!.start);
 	return s;
 }
 
