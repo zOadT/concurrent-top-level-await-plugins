@@ -1,0 +1,10 @@
+export function withResolvers<T>() {
+	let resolve: (value: T | PromiseLike<T>) => void;
+	let reject: (reason?: any) => void;
+	const promise = new Promise<T>((res, rej) => {
+		resolve = res;
+		reject = rej;
+	});
+	// @ts-expect-error
+	return { promise, resolve, reject };
+}
