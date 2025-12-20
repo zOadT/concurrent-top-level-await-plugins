@@ -28,7 +28,7 @@ export default function concurrentTopLevelAwaitPlugin(
 				if (!filter(id)) return;
 
 				const ast = this.parse(code, {
-					jsx: true, // TODO
+					jsx: false, // TODO
 				});
 
 				const importDeclarations = ast.body.filter(
