@@ -17,6 +17,10 @@ export default function concurrentTopLevelAwaitPlugin(
 
 	return {
 		name: "rollup-plugin-concurrent-tla-plugin",
+		// @ts-expect-error vite specific properties
+		// vite serves modules as ES modules during dev and thus TLA gets handled natively
+		apply: "build",
+
 		transform: {
 			// filter: {
 			// 	id: {
