@@ -1,8 +1,17 @@
 {
   "name": "rollup-plugin-concurrent-top-level-await",
   "version": "0.0.1",
-  "description": "",
-  "keywords": [],
+  "description": "Rollup (and Vite) plugin enabling concurrent execution of modules that contain top level await.",
+  "keywords": [
+    "rollup-plugin",
+    "vite-plugin",
+    "top-level-await",
+    "tla",
+    "concurrent",
+    "async",
+    "modules",
+    "es2022"
+  ],
   "type": "module",
   "exports": {
     "types": "./dist/index.d.mts",

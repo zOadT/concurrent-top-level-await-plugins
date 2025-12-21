@@ -5,7 +5,7 @@ import hasTopLevelAwait from "./hasTopLevelAwait.js";
 import { AsyncTlaTracker } from "./AsyncTlaTracker.js";
 import transform from "./transform.js";
 
-export default function concurrentTopLevelAwaitPlugin(
+export default function concurrentTopLevelAwait(
 	options: {
 		include?: FilterPattern;
 		exclude?: FilterPattern;
@@ -17,6 +17,10 @@ export default function concurrentTopLevelAwaitPlugin(
 
 	return {
 		name: "rollup-plugin-concurrent-tla-plugin",
+		// @ts-expect-error vite specific properties
+		// vite serves modules as ES modules during dev and thus TLA gets handled natively
+		apply: "build",
+
 		transform: {
 			// filter: {
 			// 	id: {
@@ -28,7 +32,7 @@ export default function concurrentTopLevelAwaitPlugin(
 				if (!filter(id)) return;
 
 				const ast = this.parse(code, {
-					jsx: true, // TODO
+					jsx: false, // TODO
 				});
 
 				const importDeclarations = ast.body.filter(
