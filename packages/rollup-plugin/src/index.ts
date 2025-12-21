@@ -5,7 +5,7 @@ import hasTopLevelAwait from "./hasTopLevelAwait.js";
 import { AsyncTlaTracker } from "./AsyncTlaTracker.js";
 import transform from "./transform.js";
 
-export default function concurrentTopLevelAwaitPlugin(
+export default function concurrentTopLevelAwait(
 	options: {
 		include?: FilterPattern;
 		exclude?: FilterPattern;
