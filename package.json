@@ -6,6 +6,7 @@
   "scripts": {
     "build": "pnpm --recursive run build",
     "changeset": "changeset",
+    "prerelease": "pnpm run build",
     "release": "pnpm -r publish --access=public && changeset tag",
     "version": "changeset version",
     "typecheck": "tsc --noEmit",
