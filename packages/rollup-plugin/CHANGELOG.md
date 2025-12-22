@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.0.3
+
+### Patch Changes
+
+- [#7](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/7) [`8ceb1ff`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/8ceb1ff0a01c7e91ec9244f2bb5e067abd4ab092) Thanks [@zOadT](https://github.com/zOadT)! - fix missing dist folder in release
+
 ## 0.0.2
 
 ### Patch Changes
