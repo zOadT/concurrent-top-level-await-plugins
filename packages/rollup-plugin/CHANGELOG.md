@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.0.4
+
+### Patch Changes
+
+- [`c449dd7`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/c449dd738588b13eebdff0ee5810edf1b53d9e16) Thanks [@zOadT](https://github.com/zOadT)! - improve top level await detection
+
 ## 0.0.3
 
 ### Patch Changes
