@@ -11,7 +11,7 @@ async function runTransform(
 ) {
 	let s = new MagicString(code);
 	const ast = await parseAstAsync(code, {
-		jsx: true,
+		jsx: false,
 	});
 
 	const importDeclarations = ast.body
