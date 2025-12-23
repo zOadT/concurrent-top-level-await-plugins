@@ -1,42 +1,36 @@
-import type { TransformPluginContext } from "rollup";
+import { Node } from "estree";
 
-// TODO simplify
-export default function hasTopLevelAwait(
-	ast: ReturnType<TransformPluginContext["parse"]>,
-): boolean {
-	let found = false;
+function isFunctionNode(node: Node) {
+	return (
+		node.type === "FunctionDeclaration" ||
+		node.type === "FunctionExpression" ||
+		node.type === "ArrowFunctionExpression" ||
+		node.type === "MethodDefinition" ||
+		(node.type === "Property" && node.value.type === "FunctionExpression")
+	);
+}
 
-	function isFunctionNode(node: any) {
-		if (!node || typeof node.type !== "string") return false;
-		return (
-			node.type === "FunctionDeclaration" ||
-			node.type === "FunctionExpression" ||
-			node.type === "ArrowFunctionExpression" ||
-			node.type === "ClassPrivateMethod" ||
-			node.type === "MethodDefinition"
-		);
+function isAwaitNode(node: Node) {
+	return (
+		node.type === "AwaitExpression" ||
+		(node.type === "ForOfStatement" && node.await) ||
+		(node.type === "VariableDeclaration" && node.kind === "await using")
+	);
+}
+
+export default function hasTopLevelAwait(ast: Node): boolean {
+	// function gets called with primitive values in the recursion
+	if (ast?.type == null) {
+		return false;
 	}
 
-	function walk(node: any, functionDepth = 0) {
-		if (!node || found) return;
-
-		if (node.type === "AwaitExpression" && functionDepth === 0) {
-			found = true;
-			return;
-		}
-
-		const nextDepth = functionDepth + (isFunctionNode(node) ? 1 : 0);
-
-		for (const key of Object.keys(node)) {
-			const child = node[key];
-			if (Array.isArray(child)) {
-				for (const c of child) walk(c, nextDepth);
-			} else if (child && typeof child.type === "string") {
-				walk(child, nextDepth);
-			}
-		}
+	if (isAwaitNode(ast)) {
+		return true;
 	}
 
-	walk(ast, 0);
-	return found;
+	if (isFunctionNode(ast)) {
+		return false;
+	}
+
+	return Object.values(ast).flat().some(hasTopLevelAwait);
 }
