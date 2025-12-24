@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.0.5
+
+### Patch Changes
+
+- [#11](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/11) [`6223602`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/6223602a42ad3ea7d01f08ca89c2f3bee801d8bb) Thanks [@zOadT](https://github.com/zOadT)! - update plugin type for Vite compatibility
+
 ## 0.0.4
 
 ### Patch Changes
