@@ -40,8 +40,10 @@ export default function concurrentTopLevelAwait(
 				);
 
 				const hasAwait = hasTopLevelAwait(ast);
+				asyncTree.setMarked(id, hasAwait);
 				if (hasAwait) {
-					asyncTree.setMarked(id, true);
+					// we can skip adding children here, as we know that the module is async anyway
+					asyncTree.setChildren(id, []);
 				} else {
 					const childrenIds = (
 						await Promise.all(

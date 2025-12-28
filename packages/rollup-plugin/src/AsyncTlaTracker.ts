@@ -3,19 +3,27 @@ import { withResolvers } from "./polyfills/promise.js";
 class AwaitableCache<K, T> {
 	#store = new Map<
 		K,
-		[Promise<T>, resolve: (value: T | PromiseLike<T>) => void]
+		[
+			Promise<T>,
+			resolve: (value: T | PromiseLike<T>) => void,
+			reject: (reason?: unknown) => void,
+		]
 	>();
 
 	#getPromise(key: K) {
 		const entry = this.#store.get(key);
 		if (entry) return entry;
-		const { promise, resolve } = withResolvers<T>();
-		this.#store.set(key, [promise, resolve]);
-		return [promise, resolve] as const;
+		const { promise, resolve, reject } = withResolvers<T>();
+		this.#store.set(key, [promise, resolve, reject]);
+		return [promise, resolve, reject] as const;
 	}
-	set(key: K, value: T | PromiseLike<T>) {
+	resolve(key: K, value: T | PromiseLike<T>) {
 		const [_, resolve] = this.#getPromise(key);
 		resolve(value);
+	}
+	reject(key: K) {
+		const [_, __, reject] = this.#getPromise(key);
+		reject();
 	}
 	get(key: K) {
 		const [promise] = this.#getPromise(key);
@@ -23,56 +31,95 @@ class AwaitableCache<K, T> {
 	}
 }
 
-// TODO optimize by allowing setMarked with value false
+/**
+ * AsyncTlaTracker tracks whether modules must be treated as async due to
+ * containing top-level await or being an ancestor of an async module.
+ */
 export class AsyncTlaTracker<K> {
-	#all = new Set<K>();
-	#unseen = new Set<K>();
-	#unresolved = new Set<K>();
-	#resultCache = new AwaitableCache<K, Boolean>();
+	#entryCache = new AwaitableCache<K, undefined>();
+	#subtreeCache = new AwaitableCache<K, undefined>();
+	#resultCache = new Map<K, Promise<Boolean>>();
 
+	// we handle cycles in the most simple (and unoptimized) way possible here
+	// to keep the acyclic case optimized
+	#seen = new Set<K>();
+	#resolved = new Set<K>();
+	#childrenSeen = new Set<K>();
+	#cycleResolver!: Promise<Boolean>;
+	#resolveCycles!: () => void;
+
+	public constructor() {
+		this.#createCycleResolver();
+	}
+
+	#createCycleResolver() {
+		const { promise, resolve } = withResolvers<Boolean>();
+		this.#cycleResolver = promise;
+		this.#resolveCycles = () => resolve(false);
+	}
+	#checkForCycles() {
+		if (
+			this.#childrenSeen.size === this.#seen.size &&
+			this.#resolved.size === this.#seen.size
+		) {
+			// use timeout because resolved promises may still propagate
+			const resolveCycles = this.#resolveCycles;
+			this.#createCycleResolver();
+			setTimeout(() => {
+				resolveCycles();
+			});
+		}
+	}
+
+	#bindResultCache(key: K) {
+		if (!this.#resultCache.has(key)) {
+			this.#resultCache.set(
+				key,
+				this.#subtreeCache
+					.get(key)
+					.then(() => false)
+					.catch(() => true),
+			);
+		}
+	}
 	get(key: K) {
-		return this.#resultCache.get(key);
+		this.#bindResultCache(key);
+		return this.#resultCache.get(key)!;
 	}
 	setMarked(key: K, value: boolean) {
-		this.#all.add(key);
-		this.#unseen.delete(key);
-		this.#unresolved.delete(key);
-		this.#resultCache.set(key, true);
-		// last action
-		setTimeout(() => {
-			if (this.#unseen.size == 0) {
-				this.#unresolved.forEach((e) => this.#resultCache.set(e, false));
-				// TODO workaround
-				this.#all.forEach((e) => this.#resultCache.set(e, false));
-				this.#unresolved.clear();
-			}
-		}, 0);
+		this.#seen.add(key);
+		this.#resolved.add(key);
+
+		if (value) {
+			this.#entryCache.reject(key);
+			// handle rejections
+			this.#entryCache.get(key).catch(() => {});
+		} else {
+			this.#entryCache.resolve(key, undefined);
+		}
+
+		this.#checkForCycles();
 	}
 	setChildren(key: K, children: K[]) {
-		if (!this.#all.has(key)) {
-			this.#all.add(key);
-			this.#unresolved.add(key);
-		}
-		this.#unseen.delete(key);
-		children.forEach((children) => {
-			if (!this.#all.has(children)) {
-				this.#all.add(children);
-				this.#unresolved.add(key);
-				this.#unseen.add(children);
-			}
-			this.#resultCache.get(children).then((value) => {
-				if (value) {
-					this.setMarked(key, true);
-				}
-			});
+		this.#seen.add(key);
+		this.#childrenSeen.add(key);
+		children.forEach((child) => {
+			this.#seen.add(child);
 		});
-		setTimeout(() => {
-			if (this.#unseen.size == 0) {
-				this.#unresolved.forEach((e) => this.#resultCache.set(e, false));
-				// TODO workaround
-				this.#all.forEach((e) => this.#resultCache.set(e, false));
-				this.#unresolved.clear();
-			}
-		}, 0);
+
+		Promise.race([
+			this.#cycleResolver,
+			Promise.all([
+				this.#entryCache.get(key),
+				...children.map((child) => this.#subtreeCache.get(child)),
+			]),
+		])
+			.then(() => this.#subtreeCache.resolve(key, undefined))
+			.catch(() => this.#subtreeCache.reject(key));
+
+		// bind promise to handle rejections
+		this.#bindResultCache(key);
+
+		this.#checkForCycles();
 	}
 }
