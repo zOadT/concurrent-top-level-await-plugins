@@ -2,7 +2,7 @@ import type { Plugin } from "rollup";
 import { createFilter, type FilterPattern } from "@rollup/pluginutils";
 import MagicString from "magic-string";
 import hasTopLevelAwait from "./hasTopLevelAwait.js";
-import { AsyncTlaTracker } from "./AsyncTlaTracker.js";
+import { AsyncModuleTracker } from "./AsyncModuleTracker.js";
 import transform from "./transform.js";
 
 export default function concurrentTopLevelAwait(
@@ -13,7 +13,7 @@ export default function concurrentTopLevelAwait(
 ) {
 	const filter = createFilter(options.include, options.exclude);
 
-	const asyncTree = new AsyncTlaTracker<string>();
+	const asyncTracker = new AsyncModuleTracker<string>();
 
 	return {
 		name: "rollup-plugin-concurrent-tla-plugin",
@@ -40,10 +40,10 @@ export default function concurrentTopLevelAwait(
 				);
 
 				const hasAwait = hasTopLevelAwait(ast);
-				asyncTree.setMarked(id, hasAwait);
+				asyncTracker.setEntryAsync(id, hasAwait);
 				if (hasAwait) {
-					// we can skip adding children here, as we know that the module is async anyway
-					asyncTree.setChildren(id, []);
+					// we can skip adding dependencies here, as we know that the module is async anyway
+					asyncTracker.setDependencies(id, []);
 				} else {
 					const childrenIds = (
 						await Promise.all(
@@ -58,7 +58,7 @@ export default function concurrentTopLevelAwait(
 						)
 					).filter((a) => a != null);
 
-					asyncTree.setChildren(id, childrenIds);
+					asyncTracker.setDependencies(id, childrenIds);
 				}
 
 				const asyncImports = (
@@ -72,7 +72,7 @@ export default function concurrentTopLevelAwait(
 							if (!importId || !filter(importId.id)) return null;
 							// don't await load to not run into deadlock
 							this.load(importId);
-							if (!(await asyncTree.get(importId.id))) return null;
+							if (!(await asyncTracker.isAsync(importId.id))) return null;
 							return declaration;
 						}),
 					)

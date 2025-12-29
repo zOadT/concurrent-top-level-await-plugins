@@ -32,10 +32,10 @@ class AwaitableCache<K, T> {
 }
 
 /**
- * AsyncTlaTracker tracks whether modules must be treated as async due to
+ * AsyncModuleTracker tracks whether modules must be treated as async due to
  * containing top-level await or being an ancestor of an async module.
  */
-export class AsyncTlaTracker<K> {
+export class AsyncModuleTracker<K> {
 	#entryCache = new AwaitableCache<K, undefined>();
 	#subtreeCache = new AwaitableCache<K, undefined>();
 	#resultCache = new Map<K, Promise<Boolean>>();
@@ -82,11 +82,12 @@ export class AsyncTlaTracker<K> {
 			);
 		}
 	}
-	get(key: K) {
+	isAsync(key: K) {
 		this.#bindResultCache(key);
 		return this.#resultCache.get(key)!;
 	}
-	setMarked(key: K, value: boolean) {
+
+	setEntryAsync(key: K, value: boolean) {
 		this.#seen.add(key);
 		this.#resolved.add(key);
 
@@ -100,7 +101,7 @@ export class AsyncTlaTracker<K> {
 
 		this.#checkForCycles();
 	}
-	setChildren(key: K, children: K[]) {
+	setDependencies(key: K, children: K[]) {
 		this.#seen.add(key);
 		this.#childrenSeen.add(key);
 		children.forEach((child) => {
