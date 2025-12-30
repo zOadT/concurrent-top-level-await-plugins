@@ -9,6 +9,7 @@ export default function concurrentTopLevelAwait(
 	options: {
 		include?: FilterPattern;
 		exclude?: FilterPattern;
+		sourceMap?: boolean;
 	} = {},
 ) {
 	const filter = createFilter(options.include, options.exclude);
@@ -31,9 +32,7 @@ export default function concurrentTopLevelAwait(
 			async handler(code, id) {
 				if (!filter(id)) return;
 
-				const ast = this.parse(code, {
-					jsx: false, // TODO
-				});
+				const ast = this.parse(code);
 
 				const importDeclarations = ast.body.filter(
 					(a) => a.type === "ImportDeclaration",
@@ -87,14 +86,12 @@ export default function concurrentTopLevelAwait(
 
 				return {
 					code: s.toString(),
-					// map: TODO
-					meta: {
-						async: isAsyncModule,
-					},
+					map:
+						options.sourceMap !== false ? s.generateMap({ hires: true }) : null,
 				};
 			},
 		},
-		resolveImportMeta(property, { moduleId, chunkId }) {
+		resolveImportMeta(property, { moduleId }) {
 			if (property !== "useTla") {
 				return;
 			}
