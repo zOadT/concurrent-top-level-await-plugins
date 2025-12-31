@@ -123,7 +123,7 @@ function moveVarDeclarationToModuleScope(
 		.flatMap((decl) => getNames(decl.id))
 		.join(", ");
 	// surround with () for destructuring
-	s = s.appendRight(node.declarations[0]!.start, "(");
+	s = s.appendRight(node.declarations[0]!.start, ";(");
 	s = s.appendLeft(node.declarations[node.declarations.length - 1]!.end, ")");
 	// TODO appendLeft/right?
 	s = s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
