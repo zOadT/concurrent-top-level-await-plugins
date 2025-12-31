@@ -1,5 +1,15 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.0.6
+
+### Patch Changes
+
+- [#15](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/15) [`2fda60e`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/2fda60e1c0ec3d51d9d24246dc831cf5fb1c9299) Thanks [@zOadT](https://github.com/zOadT)! - generate source maps
+
+- [#13](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/13) [`cfa42a6`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/cfa42a6fc4b2f451d0a05b474bdcaebecb5f48be) Thanks [@zOadT](https://github.com/zOadT)! - optimize async module tracking
+
+- [#16](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/16) [`dcd90b4`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/dcd90b479807095ec129b7ad9def13115abb3ea2) Thanks [@zOadT](https://github.com/zOadT)! - correct syntax for variable declaration handling in transform function
+
 ## 0.0.5
 
 ### Patch Changes
