@@ -627,6 +627,28 @@ describe("transform", () => {
 			`);
 		});
 
+		it("does not call expressions before variable declarations", async () => {
+			const code = `
+				dontCallMe
+				var a = 1, b = 2;
+			`;
+
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+				"var a, b;
+				async function __exec() {
+					dontCallMe;
+					((a = 1), (b = 2));
+				}
+				const __tla = __exec();
+				const __todo = __tla;
+				if (import.meta.useTla) await __todo;
+				export function __tla_access() {
+					return __tla;
+				}
+				"
+			`);
+		});
+
 		describe("with object destructuring", () => {
 			it("handles object destructuring", async () => {
 				const code = `
