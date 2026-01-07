@@ -778,5 +778,63 @@ describe("transform", () => {
 				`);
 			});
 		});
+
+		describe("with using declaration", () => {
+			it("handles using declaration", async () => {
+				const code = `
+					using resourceA = getResourceA(), resourceB = getResourceB();
+					console.log(resourceA);
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+						"let resourceA;
+
+						let resourceB;
+						async function __exec() {
+							using __tla_using_resourceA = getResourceA(),
+								__tla_using_resourceB = getResourceB();
+							resourceA = __tla_using_resourceA;
+							resourceB = __tla_using_resourceB;
+							console.log(resourceA);
+						}
+						const __tla = __exec();
+						const __todo = __tla;
+						if (import.meta.useTla) await __todo;
+						export function __tla_access() {
+							return __tla;
+						}
+						"
+					`);
+			});
+
+			it("handles await using declaration", async () => {
+				const code = `
+					await using resourceA = getResourceA(), resourceB = getResourceB();
+					console.log(resourceA);
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+						"let resourceA;
+
+						let resourceB;
+						async function __exec() {
+							await using __tla_using_resourceA = getResourceA(),
+								__tla_using_resourceB = getResourceB();
+							resourceA = __tla_using_resourceA;
+							resourceB = __tla_using_resourceB;
+							console.log(resourceA);
+						}
+						const __tla = __exec();
+						const __todo = __tla;
+						if (import.meta.useTla) await __todo;
+						export function __tla_access() {
+							return __tla;
+						}
+						"
+					`);
+			});
+		});
 	});
 });

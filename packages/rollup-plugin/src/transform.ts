@@ -72,7 +72,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 				// export const/let/var ...
 				s = s.appendLeft(moduleScopeEnd, ";export ");
 				s = s.remove(node.start, node.declaration.start);
-				s = moveVarDeclarationToModuleScope(
+				s = moveVariableDeclarationToModuleScope(
 					s,
 					node.declaration,
 					moduleScopeEnd,
@@ -81,7 +81,15 @@ function tansformAndMoveDeclarationsToModuleScope(
 		}
 
 		if (node.type === "VariableDeclaration") {
-			s = moveVarDeclarationToModuleScope(s, node, moduleScopeEnd);
+			if (node.kind.endsWith("using")) {
+				s = moveVariableDeclarationWithUsingToModuleScope(
+					s,
+					node,
+					moduleScopeEnd,
+				);
+			} else {
+				s = moveVariableDeclarationToModuleScope(s, node, moduleScopeEnd);
+			}
 		}
 
 		if (
@@ -111,8 +119,7 @@ function isDeclaration(
 	return type === "ClassDeclaration" || type === "FunctionDeclaration";
 }
 
-// TODO using/await using
-function moveVarDeclarationToModuleScope(
+function moveVariableDeclarationToModuleScope(
 	s: MagicString,
 	node: VariableDeclaration,
 	declarationsEnd: number,
@@ -127,6 +134,26 @@ function moveVarDeclarationToModuleScope(
 
 	s = s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
 	s = s.remove(node.start, node.declarations[0]!.start);
+	return s;
+}
+
+function moveVariableDeclarationWithUsingToModuleScope(
+	s: MagicString,
+	node: VariableDeclaration,
+	declarationsEnd: number,
+) {
+	node.declarations.forEach((declaration) => {
+		const id = declaration.id;
+		if (id.type !== "Identifier") {
+			throw new Error("'using' declarations may not have binding patterns.");
+		}
+		const name = id.name;
+		s = s.appendRight(id.start, `__tla_using_`);
+		s = s.appendLeft(node.end, `;\n${name} = __tla_using_${name};`);
+
+		s = s.appendLeft(declarationsEnd, `\nlet ${name};\n`);
+	});
+
 	return s;
 }
 
