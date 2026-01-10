@@ -1,5 +1,13 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.0.7
+
+### Patch Changes
+
+- [#17](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/17) [`0b360ee`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/0b360ee710ce3f93e8f23dae07e30e9a2db4b6fe) Thanks [@zOadT](https://github.com/zOadT)! - add support for 'using' declarations
+
+- [#19](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/19) [`8c2e7a4`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/8c2e7a4fd088b4d3d1b7d59e5eddb47a18b05695) Thanks [@zOadT](https://github.com/zOadT)! - add documentation about which modules should be included for the plugin
+
 ## 0.0.6
 
 ### Patch Changes
