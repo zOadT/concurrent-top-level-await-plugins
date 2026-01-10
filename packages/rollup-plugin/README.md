@@ -24,11 +24,45 @@ import concurrentTopLevelAwait from "rollup-plugin-concurrent-top-level-await";
 export default {
 	plugins: [
 		concurrentTopLevelAwait({
-			include: "**/*.ts",
+			include: "**/*.js",
 		}),
 	],
 };
 ```
+
+### Which modules to include
+
+The plugin needs to handle not only modules that directly contain a top-level `await`, but also their ancestor modules up to the lowest common ancestor. Ancestor modules must be transformed to handle the asynchronous completion of their children concurrently. As an example, consider the following module structure:
+
+```mermaid
+flowchart LR
+	app[app.js]
+	moduleA[moduleA.js]
+	moduleB[moduleB.js]
+	moduleC[moduleC.js]
+	tla1[tla1.js]
+	tla2[tla2.js]
+	tla3[tla3.js]
+	other[other.js]
+
+	app --> moduleA
+	moduleA --> moduleB
+	moduleA --> moduleC
+	moduleB --> tla1
+	moduleC --> tla2
+	moduleC --> tla3
+	app --> other
+
+	classDef tla fill:#ffe6e6,stroke:#ff0000,color:#660000
+	classDef ancestor fill:#fff4cc,stroke:#ffcc00,color:#663300
+	classDef unaffected fill:#e6ffe6,stroke:#00cc00,color:#006600
+
+	class tla1,tla2,tla3 tla
+	class moduleA,moduleB,moduleC ancestor
+	class app,other unaffected
+```
+
+If the red modules contain top level awaits, these and their yellow ancestors should be included in the plugin's `include` option.
 
 ## Known Limitations
 
