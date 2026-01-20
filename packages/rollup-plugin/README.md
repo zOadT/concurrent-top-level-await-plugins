@@ -97,18 +97,6 @@ can lead to `const` variables being assignable at runtime instead of throwing an
 
 Additionally, variable declarations may be hoisted, which removes temporal dead zone (TDZ) checks.
 
-### Exporting var
-
-The plugin only checks the very top level of a module for potentially exported variables. This means that if a `var`
-variable is declared inside a block but exported, the variable might not get handled correctly.
-
-```js
-if (something) {
-	var myValue = 42;
-}
-export default myValue;
-```
-
 ### Class Decorators
 
 Class declarations still get evaluated before any top level await expressions. This means that if a class decorator

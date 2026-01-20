@@ -6,6 +6,7 @@ import type {
 	Pattern,
 	VariableDeclaration,
 } from "estree";
+import { visitScope } from "./ast.js";
 
 export default function transform(
 	s: MagicString,
@@ -67,6 +68,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 			i++;
 		}
 
+		// move variable declarations to module scope
 		if (node.type === "ExportNamedDeclaration") {
 			if (node.declaration?.type === "VariableDeclaration") {
 				// export const/let/var ...
@@ -78,9 +80,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 					moduleScopeEnd,
 				);
 			}
-		}
-
-		if (node.type === "VariableDeclaration") {
+		} else if (node.type === "VariableDeclaration") {
 			if (node.kind.endsWith("using")) {
 				s = moveVariableDeclarationWithUsingToModuleScope(
 					s,
@@ -90,6 +90,14 @@ function tansformAndMoveDeclarationsToModuleScope(
 			} else {
 				s = moveVariableDeclarationToModuleScope(s, node, moduleScopeEnd);
 			}
+		} else {
+			// search tree for var
+			visitScope(node, (n) => {
+				if (n.type === "VariableDeclaration" && n.kind === "var") {
+					s = moveVariableDeclarationToModuleScope(s, n, moduleScopeEnd);
+				}
+				return false;
+			});
 		}
 
 		if (
