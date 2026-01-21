@@ -627,6 +627,87 @@ describe("transform", () => {
 			`);
 		});
 
+		describe("var declarations", () => {
+			it("hoists var declarations", async () => {
+				const code = `
+					try {
+						var a = 1, b = 2;
+					} catch (e) {}
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"var a, b;
+					async function __exec() {
+						try {
+							((a = 1), (b = 2));
+						} catch (e) {}
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+
+			it("does not hoist non var declarations", async () => {
+				const code = `
+					try {
+						let a = 1, b = 2;
+					} catch (e) {}
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"async function __exec() {
+						try {
+							let a = 1,
+								b = 2;
+						} catch (e) {}
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+
+			it("does not hoist var declarations inside functions", async () => {
+				const code = `
+					try {
+						function test() {
+							var a = 1, b = 2;
+						}
+					} catch(e) {}
+				`;
+
+				expect(await runTransform(code, () => true, true))
+					.toMatchInlineSnapshot(`
+					"async function __exec() {
+						try {
+							function test() {
+								var a = 1,
+									b = 2;
+							}
+						} catch (e) {}
+					}
+					const __tla = __exec();
+					const __todo = __tla;
+					if (import.meta.useTla) await __todo;
+					export function __tla_access() {
+						return __tla;
+					}
+					"
+				`);
+			});
+		});
+
 		it("does not call expressions before variable declarations", async () => {
 			const code = `
 				dontCallMe
