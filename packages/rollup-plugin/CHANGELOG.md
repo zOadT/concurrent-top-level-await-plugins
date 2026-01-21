@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.0.8
+
+### Patch Changes
+
+- [#20](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/20) [`830bb6b`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/830bb6b6b0eeabf9be7b819acd18b62fda875ddf) Thanks [@zOadT](https://github.com/zOadT)! - fix handling of var variables
+
 ## 0.0.7
 
 ### Patch Changes
