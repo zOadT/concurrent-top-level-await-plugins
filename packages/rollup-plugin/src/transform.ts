@@ -100,14 +100,32 @@ function tansformAndMoveDeclarationsToModuleScope(
 			});
 		}
 
+		// replace `export default expression` with `export { __tla_default as default }`
+		// statement to ensure the default export is a live binding
+		if (
+			node.type === "ExportDefaultDeclaration" &&
+			!isDeclaration(node.declaration.type)
+		) {
+			s = s.appendLeft(
+				moduleScopeEnd,
+				"let __tla_default;\nexport { __tla_default as default };\n",
+			);
+			// Remove 'export default '
+			s = s.remove(node.start, node.declaration.start);
+
+			s = s.appendRight(node.declaration.start, ";__tla_default = (");
+			s = s.appendLeft(node.declaration.end, ");");
+		}
+
 		if (
 			isDeclaration(node.type) ||
 			node.type === "ImportDeclaration" ||
+			(node.type === "ExportDefaultDeclaration" &&
+				isDeclaration(node.declaration.type)) ||
 			(node.type === "ExportNamedDeclaration" &&
 				isDeclaration(node.declaration?.type)) ||
 			// export { ... };
 			(node.type === "ExportNamedDeclaration" && node.declaration == null) ||
-			node.type === "ExportDefaultDeclaration" ||
 			node.type === "ExportAllDeclaration"
 		) {
 			if (node.start > moduleScopeEnd) {

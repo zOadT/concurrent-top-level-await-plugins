@@ -403,15 +403,115 @@ describe("transform", () => {
 
 		describe("variable exports", () => {
 			describe("default exports", () => {
-				it("handles kind let", async () => {
+				it("simple case", async () => {
 					const code = `
 						export default "a";
 					`;
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export default "a";
-							async function __exec() {}
+							"let __tla_default;
+							export { __tla_default as default };
+							async function __exec() {
+								__tla_default = "a";
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("handles awaited default exports", async () => {
+					const code = `
+						export default await "a";
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"let __tla_default;
+							export { __tla_default as default };
+							async function __exec() {
+								__tla_default = await "a";
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("handles export of variable", async () => {
+					const code = `
+						const a = await 1;
+						export default a;
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"let a;
+							let __tla_default;
+							export { __tla_default as default };
+							async function __exec() {
+								a = await 1;
+								__tla_default = a;
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("handles destructuring", async () => {
+					const code = `
+						let a, b;
+						export default { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"let a, b;
+							let __tla_default;
+							export { __tla_default as default };
+							async function __exec() {
+								(a, b);
+								__tla_default = { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
+							}
+							const __tla = __exec();
+							const __todo = __tla;
+							if (import.meta.useTla) await __todo;
+							export function __tla_access() {
+								return __tla;
+							}
+							"
+						`);
+				});
+
+				it("handles array destructuring", async () => {
+					const code = `
+						let a, b, c;
+						export default [a, [b, c]] = [1, [2, 3]];
+					`;
+
+					expect(await runTransform(code, () => true, true))
+						.toMatchInlineSnapshot(`
+							"let a, b, c;
+							let __tla_default;
+							export { __tla_default as default };
+							async function __exec() {
+								(a, b, c);
+								__tla_default = [a, [b, c]] = [1, [2, 3]];
+							}
 							const __tla = __exec();
 							const __todo = __tla;
 							if (import.meta.useTla) await __todo;
