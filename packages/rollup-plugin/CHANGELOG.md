@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.0.9
+
+### Patch Changes
+
+- [#22](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/22) [`8353469`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/835346989d449859c0da584b3c85a707311ecd5a) Thanks [@zOadT](https://github.com/zOadT)! - fix live bindings for default exports
+
 ## 0.0.8
 
 ### Patch Changes
