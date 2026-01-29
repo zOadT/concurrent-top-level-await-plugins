@@ -9,7 +9,7 @@ async function runTransform(
 	asyncFilter: (id: string) => boolean,
 	hasAwait: boolean,
 ) {
-	let s = new MagicString(code);
+	const s = new MagicString(code);
 	const ast = await parseAstAsync(code, {
 		jsx: false,
 	});
@@ -18,7 +18,9 @@ async function runTransform(
 		.filter((a) => a.type === "ImportDeclaration")
 		.filter((a) => asyncFilter(a.source.value as string));
 
-	return format(transform(s, ast, importDeclarations, hasAwait).toString(), {
+	transform(s, ast, importDeclarations, hasAwait);
+
+	return format(s.toString(), {
 		parser: "babel",
 		useTabs: true,
 	});
