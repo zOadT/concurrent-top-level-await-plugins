@@ -9,7 +9,7 @@ async function runTransform(
 	asyncFilter: (id: string) => boolean,
 	hasAwait: boolean,
 ) {
-	let s = new MagicString(code);
+	const s = new MagicString(code);
 	const ast = await parseAstAsync(code, {
 		jsx: false,
 	});
@@ -18,7 +18,9 @@ async function runTransform(
 		.filter((a) => a.type === "ImportDeclaration")
 		.filter((a) => asyncFilter(a.source.value as string));
 
-	return format(transform(s, ast, importDeclarations, hasAwait).toString(), {
+	transform(s, ast, importDeclarations, hasAwait);
+
+	return format(s.toString(), {
 		parser: "babel",
 		useTabs: true,
 	});
@@ -190,29 +192,60 @@ describe("transform", () => {
 				class C { }`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-					"function a() {
+				"function a() {
+					return 123;
+				}
+				class B {
+					method() {
 						return 123;
 					}
-					class B {
-						method() {
-							return 123;
-						}
-					}
-					@decorated
-					class C {}
-					async function __exec() {
-						console.log("A");
+				}
+				@decorated
+				class C {}
+				async function __exec() {
+					console.log("A");
+					console.log("B");
+				}
+				const __tla = __exec();
+				const __todo = __tla;
+				if (import.meta.useTla) await __todo;
+				export function __tla_access() {
+					return __tla;
+				}
+				"
+			`);
+		});
 
-						console.log("B");
-					}
-					const __tla = __exec();
-					const __todo = __tla;
-					if (import.meta.useTla) await __todo;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+		it("statements surrounding declaration remain separated", async () => {
+			const code = `
+				const a = function(value) {
+					console.log(value)
+				}
+				function b() {
+					return 123;
+				}
+				(123)
+			`;
+
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+				"let a;
+				function b() {
+					return 123;
+				}
+				async function __exec() {
+					a = function (value) {
+						console.log(value);
+					};
+					123;
+				}
+				const __tla = __exec();
+				const __todo = __tla;
+				if (import.meta.useTla) await __todo;
+				export function __tla_access() {
+					return __tla;
+				}
+				"
+			`);
 		});
 	});
 

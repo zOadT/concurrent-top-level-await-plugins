@@ -14,15 +14,14 @@ export default function transform(
 	asyncImports: (ImportDeclaration | null)[],
 	hasAwait: boolean,
 ) {
-	let declarationsEnd;
-	[s, declarationsEnd] = tansformAndMoveDeclarationsToModuleScope(
+	const declarationsEnd = tansformAndMoveDeclarationsToModuleScope(
 		s,
 		ast,
 		asyncImports,
 	);
 
-	s = s.appendRight(declarationsEnd, ";\nasync function __exec() {\n");
-	s = s.append("}\n");
+	s.appendRight(declarationsEnd, ";\nasync function __exec() {\n");
+	s.append("}\n");
 
 	// TODO check empty case
 	const tlas = `[${asyncImports.map((_, i) => `__tla${i}`).join()}].flatMap(a => {
@@ -42,15 +41,14 @@ export default function transform(
 			? "__exec();"
 			: `Promise.all(${tlas}.map(e => e())).then(() => __exec());`;
 	if (hasAwait) {
-		s = s.append(`const __tla = ${execWrapper}; const __todo = __tla;`);
+		s.append(`const __tla = ${execWrapper}; const __todo = __tla;`);
 	} else {
-		s = s.append(`const __tla = ${tlas};
+		s.append(`const __tla = ${tlas};
             const __todo = ${execWrapper};`);
 	}
 
-	s = s.append("if (import.meta.useTla) await __todo;");
-	s = s.append("export function __tla_access() { return __tla; };");
-	return s;
+	s.append("if (import.meta.useTla) await __todo;");
+	s.append("export function __tla_access() { return __tla; };");
 }
 
 function tansformAndMoveDeclarationsToModuleScope(
@@ -64,7 +62,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 		// add __tla import
 		if (asyncImports.includes(node as ImportDeclaration)) {
 			const tlaImport = `;import { __tla_access as __tla${i}} from '${(node as ImportDeclaration).source.value}';`;
-			s = s.appendLeft(node.end, tlaImport);
+			s.appendLeft(node.end, tlaImport);
 			i++;
 		}
 
@@ -72,9 +70,9 @@ function tansformAndMoveDeclarationsToModuleScope(
 		if (node.type === "ExportNamedDeclaration") {
 			if (node.declaration?.type === "VariableDeclaration") {
 				// export const/let/var ...
-				s = s.appendLeft(moduleScopeEnd, ";export ");
-				s = s.remove(node.start, node.declaration.start);
-				s = moveVariableDeclarationToModuleScope(
+				s.appendLeft(moduleScopeEnd, ";export ");
+				s.remove(node.start, node.declaration.start);
+				moveVariableDeclarationToModuleScope(
 					s,
 					node.declaration,
 					moduleScopeEnd,
@@ -82,19 +80,15 @@ function tansformAndMoveDeclarationsToModuleScope(
 			}
 		} else if (node.type === "VariableDeclaration") {
 			if (node.kind.endsWith("using")) {
-				s = moveVariableDeclarationWithUsingToModuleScope(
-					s,
-					node,
-					moduleScopeEnd,
-				);
+				moveVariableDeclarationWithUsingToModuleScope(s, node, moduleScopeEnd);
 			} else {
-				s = moveVariableDeclarationToModuleScope(s, node, moduleScopeEnd);
+				moveVariableDeclarationToModuleScope(s, node, moduleScopeEnd);
 			}
 		} else {
 			// search tree for var
 			visitScope(node, (n) => {
 				if (n.type === "VariableDeclaration" && n.kind === "var") {
-					s = moveVariableDeclarationToModuleScope(s, n, moduleScopeEnd);
+					moveVariableDeclarationToModuleScope(s, n, moduleScopeEnd);
 				}
 				return false;
 			});
@@ -106,15 +100,15 @@ function tansformAndMoveDeclarationsToModuleScope(
 			node.type === "ExportDefaultDeclaration" &&
 			!isDeclaration(node.declaration.type)
 		) {
-			s = s.appendLeft(
+			s.appendLeft(
 				moduleScopeEnd,
 				"let __tla_default;\nexport { __tla_default as default };\n",
 			);
 			// Remove 'export default '
-			s = s.remove(node.start, node.declaration.start);
+			s.remove(node.start, node.declaration.start);
 
-			s = s.appendRight(node.declaration.start, ";__tla_default = (");
-			s = s.appendLeft(node.declaration.end, ");");
+			s.appendRight(node.declaration.start, ";__tla_default = (");
+			s.appendLeft(node.declaration.end, ");");
 		}
 
 		if (
@@ -129,14 +123,16 @@ function tansformAndMoveDeclarationsToModuleScope(
 			node.type === "ExportAllDeclaration"
 		) {
 			if (node.start > moduleScopeEnd) {
-				s = s.appendRight(node.start, ";\n");
-				s = s.move(node.start, node.end, moduleScopeEnd);
+				s.appendRight(node.start, ";\n");
+				s.move(node.start, node.end, moduleScopeEnd);
+				// ensure statements surrounding declaration remain separated
+				s.appendLeft(node.start, ";");
 			} else {
 				moduleScopeEnd = node.end;
 			}
 		}
 	}
-	return [s, moduleScopeEnd] as const;
+	return moduleScopeEnd;
 }
 
 function isDeclaration(
@@ -155,11 +151,11 @@ function moveVariableDeclarationToModuleScope(
 		.flatMap((decl) => getNames(decl.id))
 		.join(", ");
 	// surround with () for destructuring
-	s = s.appendRight(node.declarations[0]!.start, ";(");
-	s = s.appendLeft(node.declarations[node.declarations.length - 1]!.end, ")");
+	s.appendRight(node.declarations[0]!.start, ";(");
+	s.appendLeft(node.declarations[node.declarations.length - 1]!.end, ")");
 
-	s = s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
-	s = s.remove(node.start, node.declarations[0]!.start);
+	s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
+	s.remove(node.start, node.declarations[0]!.start);
 	return s;
 }
 
@@ -174,10 +170,10 @@ function moveVariableDeclarationWithUsingToModuleScope(
 			throw new Error("'using' declarations may not have binding patterns.");
 		}
 		const name = id.name;
-		s = s.appendRight(id.start, `__tla_using_`);
-		s = s.appendLeft(node.end, `;\n${name} = __tla_using_${name};`);
+		s.appendRight(id.start, `__tla_using_`);
+		s.appendLeft(node.end, `;\n${name} = __tla_using_${name};`);
 
-		s = s.appendLeft(declarationsEnd, `\nlet ${name};\n`);
+		s.appendLeft(declarationsEnd, `\nlet ${name};\n`);
 	});
 
 	return s;

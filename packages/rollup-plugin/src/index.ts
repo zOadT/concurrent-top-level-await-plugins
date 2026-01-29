@@ -80,9 +80,9 @@ export default function concurrentTopLevelAwait(
 				const isAsyncModule = asyncImports.length > 0 || hasAwait;
 				if (!isAsyncModule) return;
 
-				let s = new MagicString(code);
+				const s = new MagicString(code);
 
-				s = transform(s, ast, asyncImports, hasAwait);
+				transform(s, ast, asyncImports, hasAwait);
 
 				return {
 					code: s.toString(),
