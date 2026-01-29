@@ -131,6 +131,8 @@ function tansformAndMoveDeclarationsToModuleScope(
 			if (node.start > moduleScopeEnd) {
 				s = s.appendRight(node.start, ";\n");
 				s = s.move(node.start, node.end, moduleScopeEnd);
+				// ensure statements surrounding declaration remain separated
+				s = s.appendLeft(node.start, ";");
 			} else {
 				moduleScopeEnd = node.end;
 			}
