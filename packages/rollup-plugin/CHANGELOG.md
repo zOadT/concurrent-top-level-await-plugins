@@ -1,5 +1,17 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.1.0
+
+### Minor Changes
+
+- [#26](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/26) [`fcd2a05`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/fcd2a05fe085ceff2684030375dc05afb10b7dc4) Thanks [@zOadT](https://github.com/zOadT)! - add `generatedVariablePrefix` option to use custom prefix for generated variables
+
+### Patch Changes
+
+- [#26](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/26) [`b63f086`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/b63f086157120162e215d4d2d34c3929af1dae84) Thanks [@zOadT](https://github.com/zOadT)! - clean up transformed code output
+
+- [#24](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/24) [`97824bb`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/97824bb12b9f6cdf18d1f860a2fc73560c2c72ad) Thanks [@zOadT](https://github.com/zOadT)! - fix ast issue when moving declaration
+
 ## 0.0.9
 
 ### Patch Changes
