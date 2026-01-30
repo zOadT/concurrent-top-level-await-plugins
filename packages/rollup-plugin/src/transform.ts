@@ -13,55 +13,66 @@ export default function transform(
 	ast: RollupAstNode<Program>,
 	asyncImports: (ImportDeclaration | null)[],
 	hasAwait: boolean,
+	variablePrefix: string,
 ) {
 	const declarationsEnd = tansformAndMoveDeclarationsToModuleScope(
 		s,
 		ast,
 		asyncImports,
+		variablePrefix,
 	);
 
-	s.appendRight(declarationsEnd, ";\nasync function __exec() {\n");
-	s.append("}\n");
+	s.appendRight(
+		declarationsEnd,
+		`async function ${variablePrefix}_initModuleExports() {\n`,
+	);
+	s.append("\n}\n");
 
 	// TODO check empty case
-	const tlas = `[${asyncImports.map((_, i) => `__tla${i}`).join()}].flatMap(a => {
-        try {
-            const result = a();
-            if (Array.isArray(result)) {
-                return result
-            }
-            return [a];
-        } catch {
-            return []; // happens for cyclic dependencies
-        }
-    })`;
+	const asyncDeps = `[${asyncImports.map((_, i) => `${variablePrefix}${i}`).join()}].flatMap(a => {
+	try {
+		const result = a();
+		if (Array.isArray(result)) {
+			return result
+		}
+		return [a];
+	} catch {
+		return []; // happens for cyclic dependencies
+	}
+})`;
 	// TODO check empty case
-	const execWrapper =
+	const initModuleExportsAfterDeps =
 		asyncImports.length === 0
-			? "__exec();"
-			: `Promise.all(${tlas}.map(e => e())).then(() => __exec());`;
+			? `${variablePrefix}_initModuleExports()`
+			: `Promise.all(${asyncDeps}.map(e => e())).then(() => ${variablePrefix}_initModuleExports())`;
 	if (hasAwait) {
-		s.append(`const __tla = ${execWrapper}; const __todo = __tla;`);
+		s.append(
+			`const ${variablePrefix} = ${initModuleExportsAfterDeps};\nconst ${variablePrefix}_initPromise = ${variablePrefix};\n`,
+		);
 	} else {
-		s.append(`const __tla = ${tlas};
-            const __todo = ${execWrapper};`);
+		s.append(
+			`const ${variablePrefix} = ${asyncDeps};\nconst ${variablePrefix}_initPromise = ${initModuleExportsAfterDeps};\n`,
+		);
 	}
 
-	s.append("if (import.meta.useTla) await __todo;");
-	s.append("export function __tla_access() { return __tla; };");
+	s.append(`if (import.meta.useTla) await ${variablePrefix}_initPromise;\n`);
+	s.append(
+		`export function ${variablePrefix}_access() { return ${variablePrefix}; };\n`,
+	);
 }
 
 function tansformAndMoveDeclarationsToModuleScope(
 	s: MagicString,
 	ast: RollupAstNode<Program>,
 	asyncImports: (ImportDeclaration | null)[],
+	variablePrefix: string,
 ) {
 	let moduleScopeEnd = 0;
 	let i = 0;
 	for (const node of ast.body) {
 		// add __tla import
 		if (asyncImports.includes(node as ImportDeclaration)) {
-			const tlaImport = `;import { __tla_access as __tla${i}} from '${(node as ImportDeclaration).source.value}';`;
+			const tlaImport = `\nimport { ${variablePrefix}_access as ${variablePrefix}${i}} from '${(node as ImportDeclaration).source.value}';`;
 			s.appendLeft(node.end, tlaImport);
 			i++;
 		}
@@ -70,7 +81,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 		if (node.type === "ExportNamedDeclaration") {
 			if (node.declaration?.type === "VariableDeclaration") {
 				// export const/let/var ...
-				s.appendLeft(moduleScopeEnd, ";export ");
+				s.appendLeft(moduleScopeEnd, "export ");
 				s.remove(node.start, node.declaration.start);
 				moveVariableDeclarationToModuleScope(
 					s,
@@ -80,7 +91,12 @@ function tansformAndMoveDeclarationsToModuleScope(
 			}
 		} else if (node.type === "VariableDeclaration") {
 			if (node.kind.endsWith("using")) {
-				moveVariableDeclarationWithUsingToModuleScope(s, node, moduleScopeEnd);
+				moveVariableDeclarationWithUsingToModuleScope(
+					s,
+					node,
+					moduleScopeEnd,
+					variablePrefix,
+				);
 			} else {
 				moveVariableDeclarationToModuleScope(s, node, moduleScopeEnd);
 			}
@@ -94,7 +110,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 			});
 		}
 
-		// replace `export default expression` with `export { __tla_default as default }`
+		// replace `export default expression` with `export { ${variablePrefix}_default as default }`
 		// statement to ensure the default export is a live binding
 		if (
 			node.type === "ExportDefaultDeclaration" &&
@@ -102,12 +118,12 @@ function tansformAndMoveDeclarationsToModuleScope(
 		) {
 			s.appendLeft(
 				moduleScopeEnd,
-				"let __tla_default;\nexport { __tla_default as default };\n",
+				`let ${variablePrefix}_default;\nexport { ${variablePrefix}_default as default };\n`,
 			);
 			// Remove 'export default '
 			s.remove(node.start, node.declaration.start);
 
-			s.appendRight(node.declaration.start, ";__tla_default = (");
+			s.appendRight(node.declaration.start, `${variablePrefix}_default = (`);
 			s.appendLeft(node.declaration.end, ");");
 		}
 
@@ -123,7 +139,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 			node.type === "ExportAllDeclaration"
 		) {
 			if (node.start > moduleScopeEnd) {
-				s.appendRight(node.start, ";\n");
+				s.appendLeft(node.end, "\n");
 				s.move(node.start, node.end, moduleScopeEnd);
 				// ensure statements surrounding declaration remain separated
 				s.appendLeft(node.start, ";");
@@ -154,7 +170,7 @@ function moveVariableDeclarationToModuleScope(
 	s.appendRight(node.declarations[0]!.start, ";(");
 	s.appendLeft(node.declarations[node.declarations.length - 1]!.end, ")");
 
-	s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
+	s.appendLeft(declarationsEnd, `${kind} ${names};\n`);
 	s.remove(node.start, node.declarations[0]!.start);
 	return s;
 }
@@ -163,6 +179,7 @@ function moveVariableDeclarationWithUsingToModuleScope(
 	s: MagicString,
 	node: VariableDeclaration,
 	declarationsEnd: number,
+	variablePrefix: string,
 ) {
 	node.declarations.forEach((declaration) => {
 		const id = declaration.id;
@@ -170,10 +187,10 @@ function moveVariableDeclarationWithUsingToModuleScope(
 			throw new Error("'using' declarations may not have binding patterns.");
 		}
 		const name = id.name;
-		s.appendRight(id.start, `__tla_using_`);
-		s.appendLeft(node.end, `;\n${name} = __tla_using_${name};`);
+		s.appendRight(id.start, `${variablePrefix}_using_`);
+		s.appendLeft(node.end, `\n${name} = ${variablePrefix}_using_${name};`);
 
-		s.appendLeft(declarationsEnd, `\nlet ${name};\n`);
+		s.appendLeft(declarationsEnd, `let ${name};\n`);
 	});
 
 	return s;
