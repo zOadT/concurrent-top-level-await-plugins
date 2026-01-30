@@ -1003,7 +1003,6 @@ describe("transform", () => {
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
 						"let resourceA;
-
 						let resourceB;
 						async function __exec() {
 							using __tla_using_resourceA = getResourceA(),
@@ -1031,7 +1030,6 @@ describe("transform", () => {
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
 						"let resourceA;
-
 						let resourceB;
 						async function __exec() {
 							await using __tla_using_resourceA = getResourceA(),

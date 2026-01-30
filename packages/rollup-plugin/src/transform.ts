@@ -20,35 +20,34 @@ export default function transform(
 		asyncImports,
 	);
 
-	s.appendRight(declarationsEnd, ";\nasync function __exec() {\n");
-	s.append("}\n");
+	s.appendRight(declarationsEnd, "async function __exec() {\n");
+	s.append("\n}\n");
 
 	// TODO check empty case
 	const tlas = `[${asyncImports.map((_, i) => `__tla${i}`).join()}].flatMap(a => {
-        try {
-            const result = a();
-            if (Array.isArray(result)) {
-                return result
-            }
-            return [a];
-        } catch {
-            return []; // happens for cyclic dependencies
-        }
-    })`;
+	try {
+		const result = a();
+		if (Array.isArray(result)) {
+			return result
+		}
+		return [a];
+	} catch {
+		return []; // happens for cyclic dependencies
+	}
+})`;
 	// TODO check empty case
 	const execWrapper =
 		asyncImports.length === 0
-			? "__exec();"
-			: `Promise.all(${tlas}.map(e => e())).then(() => __exec());`;
+			? "__exec()"
+			: `Promise.all(${tlas}.map(e => e())).then(() => __exec())`;
 	if (hasAwait) {
-		s.append(`const __tla = ${execWrapper}; const __todo = __tla;`);
+		s.append(`const __tla = ${execWrapper};\nconst __todo = __tla;\n`);
 	} else {
-		s.append(`const __tla = ${tlas};
-            const __todo = ${execWrapper};`);
+		s.append(`const __tla = ${tlas};\nconst __todo = ${execWrapper};\n`);
 	}
 
-	s.append("if (import.meta.useTla) await __todo;");
-	s.append("export function __tla_access() { return __tla; };");
+	s.append("if (import.meta.useTla) await __todo;\n");
+	s.append("export function __tla_access() { return __tla; };\n");
 }
 
 function tansformAndMoveDeclarationsToModuleScope(
@@ -61,7 +60,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 	for (const node of ast.body) {
 		// add __tla import
 		if (asyncImports.includes(node as ImportDeclaration)) {
-			const tlaImport = `;import { __tla_access as __tla${i}} from '${(node as ImportDeclaration).source.value}';`;
+			const tlaImport = `\nimport { __tla_access as __tla${i}} from '${(node as ImportDeclaration).source.value}';`;
 			s.appendLeft(node.end, tlaImport);
 			i++;
 		}
@@ -70,7 +69,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 		if (node.type === "ExportNamedDeclaration") {
 			if (node.declaration?.type === "VariableDeclaration") {
 				// export const/let/var ...
-				s.appendLeft(moduleScopeEnd, ";export ");
+				s.appendLeft(moduleScopeEnd, "export ");
 				s.remove(node.start, node.declaration.start);
 				moveVariableDeclarationToModuleScope(
 					s,
@@ -107,7 +106,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 			// Remove 'export default '
 			s.remove(node.start, node.declaration.start);
 
-			s.appendRight(node.declaration.start, ";__tla_default = (");
+			s.appendRight(node.declaration.start, "__tla_default = (");
 			s.appendLeft(node.declaration.end, ");");
 		}
 
@@ -123,7 +122,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 			node.type === "ExportAllDeclaration"
 		) {
 			if (node.start > moduleScopeEnd) {
-				s.appendRight(node.start, ";\n");
+				s.appendLeft(node.end, "\n");
 				s.move(node.start, node.end, moduleScopeEnd);
 				// ensure statements surrounding declaration remain separated
 				s.appendLeft(node.start, ";");
@@ -154,7 +153,7 @@ function moveVariableDeclarationToModuleScope(
 	s.appendRight(node.declarations[0]!.start, ";(");
 	s.appendLeft(node.declarations[node.declarations.length - 1]!.end, ")");
 
-	s.appendLeft(declarationsEnd, `\n${kind} ${names};\n`);
+	s.appendLeft(declarationsEnd, `${kind} ${names};\n`);
 	s.remove(node.start, node.declarations[0]!.start);
 	return s;
 }
@@ -171,9 +170,9 @@ function moveVariableDeclarationWithUsingToModuleScope(
 		}
 		const name = id.name;
 		s.appendRight(id.start, `__tla_using_`);
-		s.appendLeft(node.end, `;\n${name} = __tla_using_${name};`);
+		s.appendLeft(node.end, `\n${name} = __tla_using_${name};`);
 
-		s.appendLeft(declarationsEnd, `\nlet ${name};\n`);
+		s.appendLeft(declarationsEnd, `let ${name};\n`);
 	});
 
 	return s;
