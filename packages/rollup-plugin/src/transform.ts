@@ -13,18 +13,23 @@ export default function transform(
 	ast: RollupAstNode<Program>,
 	asyncImports: (ImportDeclaration | null)[],
 	hasAwait: boolean,
+	variablePrefix: string,
 ) {
 	const declarationsEnd = tansformAndMoveDeclarationsToModuleScope(
 		s,
 		ast,
 		asyncImports,
+		variablePrefix,
 	);
 
-	s.appendRight(declarationsEnd, "async function __exec() {\n");
+	s.appendRight(
+		declarationsEnd,
+		`async function ${variablePrefix}_initModuleExports() {\n`,
+	);
 	s.append("\n}\n");
 
 	// TODO check empty case
-	const tlas = `[${asyncImports.map((_, i) => `__tla${i}`).join()}].flatMap(a => {
+	const asyncDeps = `[${asyncImports.map((_, i) => `${variablePrefix}${i}`).join()}].flatMap(a => {
 	try {
 		const result = a();
 		if (Array.isArray(result)) {
@@ -36,31 +41,38 @@ export default function transform(
 	}
 })`;
 	// TODO check empty case
-	const execWrapper =
+	const initModuleExportsAfterDeps =
 		asyncImports.length === 0
-			? "__exec()"
-			: `Promise.all(${tlas}.map(e => e())).then(() => __exec())`;
+			? `${variablePrefix}_initModuleExports()`
+			: `Promise.all(${asyncDeps}.map(e => e())).then(() => ${variablePrefix}_initModuleExports())`;
 	if (hasAwait) {
-		s.append(`const __tla = ${execWrapper};\nconst __todo = __tla;\n`);
+		s.append(
+			`const ${variablePrefix} = ${initModuleExportsAfterDeps};\nconst ${variablePrefix}_initPromise = ${variablePrefix};\n`,
+		);
 	} else {
-		s.append(`const __tla = ${tlas};\nconst __todo = ${execWrapper};\n`);
+		s.append(
+			`const ${variablePrefix} = ${asyncDeps};\nconst ${variablePrefix}_initPromise = ${initModuleExportsAfterDeps};\n`,
+		);
 	}
 
-	s.append("if (import.meta.useTla) await __todo;\n");
-	s.append("export function __tla_access() { return __tla; };\n");
+	s.append(`if (import.meta.useTla) await ${variablePrefix}_initPromise;\n`);
+	s.append(
+		`export function ${variablePrefix}_access() { return ${variablePrefix}; };\n`,
+	);
 }
 
 function tansformAndMoveDeclarationsToModuleScope(
 	s: MagicString,
 	ast: RollupAstNode<Program>,
 	asyncImports: (ImportDeclaration | null)[],
+	variablePrefix: string,
 ) {
 	let moduleScopeEnd = 0;
 	let i = 0;
 	for (const node of ast.body) {
 		// add __tla import
 		if (asyncImports.includes(node as ImportDeclaration)) {
-			const tlaImport = `\nimport { __tla_access as __tla${i}} from '${(node as ImportDeclaration).source.value}';`;
+			const tlaImport = `\nimport { ${variablePrefix}_access as ${variablePrefix}${i}} from '${(node as ImportDeclaration).source.value}';`;
 			s.appendLeft(node.end, tlaImport);
 			i++;
 		}
@@ -79,7 +91,12 @@ function tansformAndMoveDeclarationsToModuleScope(
 			}
 		} else if (node.type === "VariableDeclaration") {
 			if (node.kind.endsWith("using")) {
-				moveVariableDeclarationWithUsingToModuleScope(s, node, moduleScopeEnd);
+				moveVariableDeclarationWithUsingToModuleScope(
+					s,
+					node,
+					moduleScopeEnd,
+					variablePrefix,
+				);
 			} else {
 				moveVariableDeclarationToModuleScope(s, node, moduleScopeEnd);
 			}
@@ -93,7 +110,7 @@ function tansformAndMoveDeclarationsToModuleScope(
 			});
 		}
 
-		// replace `export default expression` with `export { __tla_default as default }`
+		// replace `export default expression` with `export { ${variablePrefix}_default as default }`
 		// statement to ensure the default export is a live binding
 		if (
 			node.type === "ExportDefaultDeclaration" &&
@@ -101,12 +118,12 @@ function tansformAndMoveDeclarationsToModuleScope(
 		) {
 			s.appendLeft(
 				moduleScopeEnd,
-				"let __tla_default;\nexport { __tla_default as default };\n",
+				`let ${variablePrefix}_default;\nexport { ${variablePrefix}_default as default };\n`,
 			);
 			// Remove 'export default '
 			s.remove(node.start, node.declaration.start);
 
-			s.appendRight(node.declaration.start, "__tla_default = (");
+			s.appendRight(node.declaration.start, `${variablePrefix}_default = (`);
 			s.appendLeft(node.declaration.end, ");");
 		}
 
@@ -162,6 +179,7 @@ function moveVariableDeclarationWithUsingToModuleScope(
 	s: MagicString,
 	node: VariableDeclaration,
 	declarationsEnd: number,
+	variablePrefix: string,
 ) {
 	node.declarations.forEach((declaration) => {
 		const id = declaration.id;
@@ -169,8 +187,8 @@ function moveVariableDeclarationWithUsingToModuleScope(
 			throw new Error("'using' declarations may not have binding patterns.");
 		}
 		const name = id.name;
-		s.appendRight(id.start, `__tla_using_`);
-		s.appendLeft(node.end, `\n${name} = __tla_using_${name};`);
+		s.appendRight(id.start, `${variablePrefix}_using_`);
+		s.appendLeft(node.end, `\n${name} = ${variablePrefix}_using_${name};`);
 
 		s.appendLeft(declarationsEnd, `let ${name};\n`);
 	});
