@@ -99,6 +99,14 @@ postponed until the subgraph is analyzed. This may lead to slower builds.
 
 If you notice significant performance degradation, please open an issue.
 
+### Exposed Module Structure
+
+Because the execution of modules gets wrapped in functions, the bundled output will contain more information about the source module structure. This may be a consideration for projects where code obfuscation is important.
+
+### Tree Shaking
+
+Wrapping code in functions may reduce tree shaking effectiveness. We mitigate this where possible, such as by not wrapping declarations.
+
 ### Changing Variable Types
 
 In the process of transforming the code, top level `const` declarations may get replaced with `let` declarations. This
