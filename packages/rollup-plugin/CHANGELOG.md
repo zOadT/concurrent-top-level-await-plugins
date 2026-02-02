@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.1.1
+
+### Patch Changes
+
+- [#27](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/27) [`54b6048`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/54b60484a2d81a4e82f1860fbb97b3a46470ac7f) Thanks [@zOadT](https://github.com/zOadT)! - add note about exposed module structure and tree shaking to known limitations
+
 ## 0.1.0
 
 ### Minor Changes
