@@ -175,33 +175,19 @@ describe("transform", () => {
 		});
 	});
 
-	describe("declarations", () => {
-		it("moves declarations to top", async () => {
+	describe("function declarations", () => {
+		it("moves function declarations to top", async () => {
 			const code = `
+				console.log('A');
 				function a() {
 					return 123;
 				}
-				console.log('A');
-				class B {
-					method() {
-						return 123;
-					}
-				}
-				console.log('B');
-				@decorated
-				class C { }`;
+				console.log('B');`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
 				"function a() {
 					return 123;
 				}
-				class B {
-					method() {
-						return 123;
-					}
-				}
-				@decorated
-				class C {}
 				async function __tla_initModuleExports() {
 					console.log("A");
 					console.log("B");
@@ -237,6 +223,109 @@ describe("transform", () => {
 						console.log(value);
 					};
 					123;
+				}
+				const __tla = __tla_initModuleExports();
+				const __tla_initPromise = __tla;
+				if (import.meta.useTla) await __tla_initPromise;
+				export function __tla_access() {
+					return __tla;
+				}
+				"
+			`);
+		});
+	});
+
+	describe("class declarations", () => {
+		it("handles undecorated classes", async () => {
+			const code = `
+				console.log("A");
+				class A {
+					method() {
+						return 123;
+					}
+				}
+				console.log("B");
+			`;
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+				"let A;
+				async function __tla_initModuleExports() {
+					console.log("A");
+					A = class A {
+						method() {
+							return 123;
+						}
+					};
+					console.log("B");
+				}
+				const __tla = __tla_initModuleExports();
+				const __tla_initPromise = __tla;
+				if (import.meta.useTla) await __tla_initPromise;
+				export function __tla_access() {
+					return __tla;
+				}
+				"
+			`);
+		});
+
+		it("handles decorated classes", async () => {
+			const code = `
+				console.log("A");
+				@decorator
+				class A {
+					method() {
+						return 123;
+					}
+				}
+				console.log("B");
+			`;
+
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+				"let A;
+				async function __tla_initModuleExports() {
+					console.log("A");
+					A =
+						@decorator
+						class A {
+							method() {
+								return 123;
+							}
+						};
+					console.log("B");
+				}
+				const __tla = __tla_initModuleExports();
+				const __tla_initPromise = __tla;
+				if (import.meta.useTla) await __tla_initPromise;
+				export function __tla_access() {
+					return __tla;
+				}
+				"
+			`);
+		});
+
+		it("handles multiple decorators", async () => {
+			const code = `
+				console.log("A");
+				@decorator1 @decorator2 class A {
+					method() {
+						return 123;
+					}
+				}
+				console.log("B");
+			`;
+
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+				"let A;
+				async function __tla_initModuleExports() {
+					console.log("A");
+					A =
+						@decorator1
+						@decorator2
+						class A {
+							method() {
+								return 123;
+							}
+						};
+					console.log("B");
 				}
 				const __tla = __tla_initModuleExports();
 				const __tla_initPromise = __tla;
@@ -306,9 +395,9 @@ describe("transform", () => {
 
 		describe("class declaration exports", () => {
 			describe("handles default exports", () => {
-				it("without decorator", async () => {
+				it("without name", async () => {
 					const code = `
-						export default class A {
+						export default @decorator class {
 							method() {
 								return 123;
 							}
@@ -318,12 +407,16 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export default class A {
-								method() {
-									return 123;
-								}
-							}
+							"let __tla_default;
+							export { __tla_default as default };
 							async function __tla_initModuleExports() {
+								__tla_default =
+									@decorator
+									class {
+										method() {
+											return 123;
+										}
+									};
 								console.log("A");
 							}
 							const __tla = __tla_initModuleExports();
@@ -336,7 +429,7 @@ describe("transform", () => {
 						`);
 				});
 
-				it("with decorator", async () => {
+				it("with name", async () => {
 					const code = `
 						export default @decorator class A {
 							method() {
@@ -348,14 +441,16 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export default
-							@decorator
-							class A {
-								method() {
-									return 123;
-								}
-							}
+							"let A;
+							export { A as default };
 							async function __tla_initModuleExports() {
+								A =
+									@decorator
+									class A {
+										method() {
+											return 123;
+										}
+									};
 								console.log("A");
 							}
 							const __tla = __tla_initModuleExports();
@@ -382,12 +477,13 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export class A {
-								method() {
-									return 123;
-								}
-							}
+							"export let A;
 							async function __tla_initModuleExports() {
+								A = class A {
+									method() {
+										return 123;
+									}
+								};
 								console.log("A");
 							}
 							const __tla = __tla_initModuleExports();
@@ -412,14 +508,15 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export
-							@decorator
-							class A {
-								method() {
-									return 123;
-								}
-							}
+							"export let A;
 							async function __tla_initModuleExports() {
+								A =
+									@decorator
+									class A {
+										method() {
+											return 123;
+										}
+									};
 								console.log("A");
 							}
 							const __tla = __tla_initModuleExports();
