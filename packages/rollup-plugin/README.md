@@ -114,6 +114,6 @@ can lead to `const` variables being assignable at runtime instead of throwing an
 
 Additionally, variable declarations may be hoisted, which removes temporal dead zone (TDZ) checks.
 
-## Default export class name
+### Default export class name
 
 When using `export default class {}`, the runtime `.name` of the exported value will be `<generatedVariablePrefix>_default` (e.g. `__tla_default`) instead of `default`.

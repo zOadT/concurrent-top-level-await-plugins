@@ -38,14 +38,14 @@ class AwaitableCache<K, T> {
 export class AsyncModuleTracker<K> {
 	#entryCache = new AwaitableCache<K, undefined>();
 	#subtreeCache = new AwaitableCache<K, undefined>();
-	#resultCache = new Map<K, Promise<Boolean>>();
+	#resultCache = new Map<K, Promise<boolean>>();
 
 	// we handle cycles in the most simple (and unoptimized) way possible here
 	// to keep the acyclic case optimized
 	#seen = new Set<K>();
 	#resolved = new Set<K>();
 	#childrenSeen = new Set<K>();
-	#cycleResolver!: Promise<Boolean>;
+	#cycleResolver!: Promise<boolean>;
 	#resolveCycles!: () => void;
 
 	public constructor() {
@@ -53,7 +53,7 @@ export class AsyncModuleTracker<K> {
 	}
 
 	#createCycleResolver() {
-		const { promise, resolve } = withResolvers<Boolean>();
+		const { promise, resolve } = withResolvers<boolean>();
 		this.#cycleResolver = promise;
 		this.#resolveCycles = () => resolve(false);
 	}

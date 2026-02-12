@@ -16,7 +16,7 @@ export default function transform(
 	hasAwait: boolean,
 	variablePrefix: string,
 ) {
-	const declarationsEnd = tansformAndMoveDeclarationsToModuleScope(
+	const declarationsEnd = transformAndMoveDeclarationsToModuleScope(
 		s,
 		ast,
 		asyncImports,
@@ -62,7 +62,7 @@ export default function transform(
 	);
 }
 
-function tansformAndMoveDeclarationsToModuleScope(
+function transformAndMoveDeclarationsToModuleScope(
 	s: MagicString,
 	ast: RollupAstNode<Program>,
 	asyncImports: (ImportDeclaration | null)[],
