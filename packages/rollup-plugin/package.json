@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-concurrent-top-level-await",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Rollup (and Vite) plugin enabling concurrent execution of modules that contain top level await.",
   "keywords": [
     "rollup-plugin",

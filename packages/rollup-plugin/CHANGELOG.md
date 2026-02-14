@@ -1,5 +1,15 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.2.0
+
+### Minor Changes
+
+- [#29](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/29) [`b9cecd6`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/b9cecd6f6a916cc456b54a74193f2a7a0858ba0e) Thanks [@zOadT](https://github.com/zOadT)! - add support for class decorators
+
+### Patch Changes
+
+- [#27](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/27) [`54b6048`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/54b60484a2d81a4e82f1860fbb97b3a46470ac7f) Thanks [@zOadT](https://github.com/zOadT)! - add note about exposed module structure and tree shaking to known limitations
+
 ## 0.1.0
 
 ### Minor Changes
