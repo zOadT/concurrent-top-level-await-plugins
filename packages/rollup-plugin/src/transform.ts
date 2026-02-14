@@ -5,6 +5,7 @@ import type {
 	ImportDeclaration,
 	Pattern,
 	VariableDeclaration,
+	MaybeNamedClassDeclaration,
 } from "estree";
 import { visitScope } from "./ast.js";
 
@@ -15,7 +16,7 @@ export default function transform(
 	hasAwait: boolean,
 	variablePrefix: string,
 ) {
-	const declarationsEnd = tansformAndMoveDeclarationsToModuleScope(
+	const declarationsEnd = transformAndMoveDeclarationsToModuleScope(
 		s,
 		ast,
 		asyncImports,
@@ -61,7 +62,7 @@ export default function transform(
 	);
 }
 
-function tansformAndMoveDeclarationsToModuleScope(
+function transformAndMoveDeclarationsToModuleScope(
 	s: MagicString,
 	ast: RollupAstNode<Program>,
 	asyncImports: (ImportDeclaration | null)[],
@@ -77,6 +78,11 @@ function tansformAndMoveDeclarationsToModuleScope(
 			i++;
 		}
 
+		if (node.type === "ClassDeclaration") {
+			s.appendLeft(moduleScopeEnd, `let ${node.id.name};\n`);
+			s.appendRight(node.start, `${node.id.name} = `);
+		}
+
 		// move variable declarations to module scope
 		if (node.type === "ExportNamedDeclaration") {
 			if (node.declaration?.type === "VariableDeclaration") {
@@ -88,6 +94,15 @@ function tansformAndMoveDeclarationsToModuleScope(
 					node.declaration,
 					moduleScopeEnd,
 				);
+			} else if (node.declaration?.type === "ClassDeclaration") {
+				// export class ...
+				s.appendLeft(
+					moduleScopeEnd,
+					`export let ${node.declaration.id.name};\n`,
+				);
+				const declarationStart = getClassDeclarationStart(node.declaration);
+				s.remove(node.start, declarationStart);
+				s.appendRight(declarationStart, `${node.declaration.id.name} = `);
 			}
 		} else if (node.type === "VariableDeclaration") {
 			if (node.kind.endsWith("using")) {
@@ -114,26 +129,37 @@ function tansformAndMoveDeclarationsToModuleScope(
 		// statement to ensure the default export is a live binding
 		if (
 			node.type === "ExportDefaultDeclaration" &&
-			!isDeclaration(node.declaration.type)
+			!isFunctionDeclaration(node.declaration.type)
 		) {
+			const variableName =
+				node.declaration.type === "ClassDeclaration"
+					? (node.declaration.id?.name ?? `${variablePrefix}_default`)
+					: `${variablePrefix}_default`;
+
 			s.appendLeft(
 				moduleScopeEnd,
-				`let ${variablePrefix}_default;\nexport { ${variablePrefix}_default as default };\n`,
+				`let ${variableName};\nexport { ${variableName} as default };\n`,
 			);
-			// Remove 'export default '
-			s.remove(node.start, node.declaration.start);
 
-			s.appendRight(node.declaration.start, `${variablePrefix}_default = (`);
+			const declarationStart =
+				node.declaration.type === "ClassDeclaration"
+					? getClassDeclarationStart(node.declaration)
+					: node.declaration.start;
+
+			// Remove 'export default '
+			s.remove(node.start, declarationStart);
+
+			s.appendRight(declarationStart, `${variableName} = (`);
 			s.appendLeft(node.declaration.end, ");");
 		}
 
 		if (
-			isDeclaration(node.type) ||
+			isFunctionDeclaration(node.type) ||
 			node.type === "ImportDeclaration" ||
 			(node.type === "ExportDefaultDeclaration" &&
-				isDeclaration(node.declaration.type)) ||
+				isFunctionDeclaration(node.declaration.type)) ||
 			(node.type === "ExportNamedDeclaration" &&
-				isDeclaration(node.declaration?.type)) ||
+				isFunctionDeclaration(node.declaration?.type)) ||
 			// export { ... };
 			(node.type === "ExportNamedDeclaration" && node.declaration == null) ||
 			node.type === "ExportAllDeclaration"
@@ -151,10 +177,12 @@ function tansformAndMoveDeclarationsToModuleScope(
 	return moduleScopeEnd;
 }
 
-function isDeclaration(
-	type?: string,
-): type is "ClassDeclaration" | "FunctionDeclaration" {
-	return type === "ClassDeclaration" || type === "FunctionDeclaration";
+function isFunctionDeclaration(type?: string): type is "FunctionDeclaration" {
+	return type === "FunctionDeclaration";
+}
+
+function getClassDeclarationStart(node: MaybeNamedClassDeclaration) {
+	return node.decorators[0]?.start ?? node.start;
 }
 
 function moveVariableDeclarationToModuleScope(

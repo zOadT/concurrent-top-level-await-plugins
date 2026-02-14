@@ -114,7 +114,6 @@ can lead to `const` variables being assignable at runtime instead of throwing an
 
 Additionally, variable declarations may be hoisted, which removes temporal dead zone (TDZ) checks.
 
-### Class Decorators
+### Default export class name
 
-Class declarations still get evaluated before any top level await expressions. This means that if a class decorator
-relies on a top level await expression, it may not work as expected.
+When using `export default class {}`, the runtime `.name` of the exported value will be `<generatedVariablePrefix>_default` (e.g. `__tla_default`) instead of `default`.
