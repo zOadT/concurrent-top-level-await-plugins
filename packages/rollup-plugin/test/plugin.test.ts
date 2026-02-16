@@ -1,0 +1,62 @@
+import { describe, expect, it } from "vitest";
+import path from "node:path";
+import fs from "node:fs/promises";
+import { rollup, RollupBuild } from "rollup";
+import concurrentTopLevelAwait from "../src/index.js";
+import { randomUUID } from "node:crypto";
+
+async function runBundle(bundle: RollupBuild) {
+	const uuid = randomUUID();
+	const traces: string[] = [];
+
+	const onTrace = (data: { message: string; uuid: string }) => {
+		if (data.uuid === uuid) {
+			traces.push(data.message);
+		}
+	};
+	process.on("trace", onTrace);
+
+	const { output } = await bundle.write({
+		dir: path.join(__dirname, "dist", uuid),
+		intro: `function trace(message) {
+    process.emit("trace", { message, uuid: "${uuid}" });
+}`,
+	});
+
+	const exports = await import(
+		path.join(__dirname, "dist", uuid, output[0].fileName)
+	);
+
+	await fs.rm(path.join(__dirname, "dist", uuid), {
+		recursive: true,
+		force: true,
+	});
+
+	process.off("trace", onTrace);
+
+	return { exports, traces };
+}
+
+describe("rollup-plugin", () => {
+	it("basic test", async () => {
+		const bundle = await rollup({
+			input: path.join(__dirname, "examples", "basic", "index.js"),
+			plugins: [
+				concurrentTopLevelAwait({
+					include: "**/*.js",
+				}),
+			],
+		});
+
+		const { traces } = await runBundle(bundle);
+
+		expect(traces).toEqual([
+			"a before",
+			"b before",
+			"a after",
+			"b after",
+			"index before",
+			"index after",
+		]);
+	});
+});
