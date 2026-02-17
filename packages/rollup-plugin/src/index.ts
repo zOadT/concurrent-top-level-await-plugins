@@ -111,7 +111,7 @@ export default function concurrentTopLevelAwait(
 			const moduleInfo = this.getModuleInfo(moduleId);
 			const importers = moduleInfo?.importers;
 
-			// TODO isEntry check required? check with rollup
+			// `isEntry` check is required for when the entry module is inside a cycle
 			if (moduleInfo?.isEntry || !importers?.length) {
 				return "true";
 			}

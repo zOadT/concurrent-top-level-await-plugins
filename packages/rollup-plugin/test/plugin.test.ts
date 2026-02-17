@@ -59,4 +59,26 @@ describe("rollup-plugin", () => {
 			"index after",
 		]);
 	});
+
+	it("respects isEntry in cycle", async () => {
+		const bundle = await rollup({
+			input: path.join(__dirname, "examples", "cyclic-entry", "index.js"),
+			plugins: [
+				concurrentTopLevelAwait({
+					include: "**/*.js",
+				}),
+			],
+		});
+
+		const { traces } = await runBundle(bundle);
+
+		expect(traces).toEqual([
+			"b before",
+			"b after",
+			"a before",
+			"a after",
+			"index before",
+			"index after",
+		]);
+	});
 });
