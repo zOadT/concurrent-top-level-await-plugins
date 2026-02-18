@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { rollup, RollupBuild } from "rollup";
+import { CustomPluginOptions, rollup, RollupBuild } from "rollup";
 import concurrentTopLevelAwait from "../src/index.js";
 import { randomUUID } from "node:crypto";
 
@@ -58,6 +58,47 @@ describe("rollup-plugin", () => {
 			"index before",
 			"index after",
 		]);
+	});
+
+	it("forwards import attributes to resolve", async () => {
+		type CallRecords = Record<
+			string,
+			{
+				attributes: Record<string, string>;
+				custom?: CustomPluginOptions;
+				importerAttributes?: Record<string, string> | undefined;
+				isEntry: boolean;
+			}
+		>;
+		const pluginCalls: CallRecords = {};
+		const rollupCalls: CallRecords = {};
+
+		await rollup({
+			input: path.join(__dirname, "examples", "import-attributes", "index.js"),
+			plugins: [
+				{
+					name: "attributes-spy",
+					resolveId(source, _importer, options) {
+						if (source.endsWith("index.js")) return null;
+
+						if (!(source in pluginCalls)) {
+							pluginCalls[source] = options;
+						} else if (!(source in rollupCalls)) {
+							rollupCalls[source] = options;
+						} else {
+							throw new Error(`Unexpected multiple calls for ${source}`);
+						}
+
+						return null;
+					},
+				},
+				concurrentTopLevelAwait({
+					include: "**/*.js",
+				}),
+			],
+		});
+
+		expect(pluginCalls).toStrictEqual(rollupCalls);
 	});
 
 	it("respects isEntry in cycle", async () => {
