@@ -90,7 +90,6 @@ export default function concurrentTopLevelAwait(
 				const asyncImports = (
 					await Promise.all(
 						importDeclarations.map(async (declaration) => {
-							// TODO avoid infinite recursion
 							const importId = await resolveDeclarationSource(
 								this,
 								id,
