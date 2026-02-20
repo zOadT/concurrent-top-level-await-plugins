@@ -1,9 +1,28 @@
-import type { Plugin } from "rollup";
+import type { ImportDeclaration } from "estree";
+import type { Plugin, TransformPluginContext } from "rollup";
 import { createFilter, type FilterPattern } from "@rollup/pluginutils";
 import MagicString from "magic-string";
 import hasTopLevelAwait from "./hasTopLevelAwait.js";
 import { AsyncModuleTracker } from "./AsyncModuleTracker.js";
 import transform from "./transform.js";
+
+function resolveDeclarationSource(
+	context: TransformPluginContext,
+	id: string,
+	importerAttributes: Record<string, string> = {},
+	declaration: ImportDeclaration,
+) {
+	return context.resolve(declaration.source.value as string, id, {
+		attributes: Object.fromEntries(
+			declaration.attributes.map((attr) => [
+				attr.key.type === "Identifier" ? attr.key.name : attr.key.value,
+				attr.value.value,
+			]),
+		),
+		importerAttributes,
+		custom: {},
+	});
+}
 
 export default function concurrentTopLevelAwait(
 	options: {
@@ -35,7 +54,7 @@ export default function concurrentTopLevelAwait(
 			// 		exclude: options.exclude ?? undefined,
 			// 	},
 			// },
-			async handler(code, id) {
+			async handler(code, id, transformOptions) {
 				if (!filter(id)) return;
 
 				const ast = this.parse(code);
@@ -53,9 +72,11 @@ export default function concurrentTopLevelAwait(
 					const childrenIds = (
 						await Promise.all(
 							importDeclarations.map(async (declaration) => {
-								const importId = await this.resolve(
-									declaration.source.value as string,
+								const importId = await resolveDeclarationSource(
+									this,
 									id,
+									transformOptions?.attributes,
+									declaration,
 								);
 								if (!importId || !filter(importId.id)) return null;
 								return importId.id;
@@ -69,10 +90,11 @@ export default function concurrentTopLevelAwait(
 				const asyncImports = (
 					await Promise.all(
 						importDeclarations.map(async (declaration) => {
-							// TODO avoid infinite recursion
-							const importId = await this.resolve(
-								declaration.source.value as string,
+							const importId = await resolveDeclarationSource(
+								this,
 								id,
+								transformOptions?.attributes,
+								declaration,
 							);
 							if (!importId || !filter(importId.id)) return null;
 							// don't await load to not run into deadlock
@@ -111,7 +133,7 @@ export default function concurrentTopLevelAwait(
 			const moduleInfo = this.getModuleInfo(moduleId);
 			const importers = moduleInfo?.importers;
 
-			// TODO isEntry check required? check with rollup
+			// `isEntry` check is required for when the entry module is inside a cycle
 			if (moduleInfo?.isEntry || !importers?.length) {
 				return "true";
 			}
