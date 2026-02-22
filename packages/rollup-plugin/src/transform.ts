@@ -12,7 +12,7 @@ import { visitScope } from "./ast.js";
 export default function transform(
 	s: MagicString,
 	ast: RollupAstNode<Program>,
-	asyncImports: (ImportDeclaration | null)[],
+	asyncImports: ImportDeclaration[],
 	hasAwait: boolean,
 	variablePrefix: string,
 ) {

@@ -65,29 +65,13 @@ export default function concurrentTopLevelAwait(
 
 				const hasAwait = hasTopLevelAwait(ast);
 				asyncTracker.setEntryAsync(id, hasAwait);
+
 				if (hasAwait) {
 					// we can skip adding dependencies here, as we know that the module is async anyway
 					asyncTracker.setDependencies(id, []);
-				} else {
-					const childrenIds = (
-						await Promise.all(
-							importDeclarations.map(async (declaration) => {
-								const importId = await resolveDeclarationSource(
-									this,
-									id,
-									transformOptions?.attributes,
-									declaration,
-								);
-								if (!importId || !filter(importId.id)) return null;
-								return importId.id;
-							}),
-						)
-					).filter((a) => a != null);
-
-					asyncTracker.setDependencies(id, childrenIds);
 				}
 
-				const asyncImports = (
+				let imports = (
 					await Promise.all(
 						importDeclarations.map(async (declaration) => {
 							const importId = await resolveDeclarationSource(
@@ -97,13 +81,31 @@ export default function concurrentTopLevelAwait(
 								declaration,
 							);
 							if (!importId || !filter(importId.id)) return null;
+							return {
+								declaration,
+								id: importId.id,
+							};
+						}),
+					)
+				).filter(Boolean) as { declaration: ImportDeclaration; id: string }[];
+
+				if (!hasAwait) {
+					asyncTracker.setDependencies(
+						id,
+						imports.map((x) => x.id),
+					);
+				}
+
+				const asyncImports = (
+					await Promise.all(
+						imports.map(async ({ declaration, id }) => {
 							// don't await load to not run into deadlock
-							this.load(importId);
-							if (!(await asyncTracker.isAsync(importId.id))) return null;
+							this.load({ id });
+							if (!(await asyncTracker.isAsync(id))) return null;
 							return declaration;
 						}),
 					)
-				).filter(Boolean);
+				).filter(Boolean) as ImportDeclaration[];
 
 				const isAsyncModule = asyncImports.length > 0 || hasAwait;
 				if (!isAsyncModule) return;
