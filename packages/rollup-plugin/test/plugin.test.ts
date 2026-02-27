@@ -79,6 +79,7 @@ describe("rollup-plugin", () => {
 				{
 					name: "attributes-spy",
 					resolveId(source, _importer, options) {
+						if (source.startsWith("\0")) return null;
 						if (source.endsWith("index.js")) return null;
 
 						if (!(source in pluginCalls)) {
@@ -101,9 +102,9 @@ describe("rollup-plugin", () => {
 		expect(pluginCalls).toStrictEqual(rollupCalls);
 	});
 
-	it("respects isEntry in cycle", async () => {
+	it("correctly handles sync siblings", async () => {
 		const bundle = await rollup({
-			input: path.join(__dirname, "examples", "cyclic-entry", "index.js"),
+			input: path.join(__dirname, "examples", "sync-siblings", "index.js"),
 			plugins: [
 				concurrentTopLevelAwait({
 					include: "**/*.js",
@@ -114,12 +115,63 @@ describe("rollup-plugin", () => {
 		const { traces } = await runBundle(bundle);
 
 		expect(traces).toEqual([
-			"b before",
-			"b after",
 			"a before",
+			"b before",
+			"c before",
 			"a after",
+			"b in between",
+			"c after",
+			"b after",
 			"index before",
 			"index after",
 		]);
+	});
+
+	describe("cycles", () => {
+		it("handles cycles", async () => {
+			const bundle = await rollup({
+				input: path.join(__dirname, "examples", "cyclic", "index.js"),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+
+			const { traces } = await runBundle(bundle);
+
+			expect(traces).toEqual([
+				"c before",
+				"c after",
+				"b before",
+				"b after",
+				"a before",
+				"a after",
+				"index before",
+				"index after",
+			]);
+		});
+
+		it("respects isEntry in cycle", async () => {
+			const bundle = await rollup({
+				input: path.join(__dirname, "examples", "cyclic", "c.js"),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+
+			const { traces } = await runBundle(bundle);
+
+			expect(traces).toEqual([
+				"b before",
+				"b after",
+				"a before",
+				"a after",
+				"c before",
+				"c after",
+			]);
+		});
 	});
 });

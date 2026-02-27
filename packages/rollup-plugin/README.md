@@ -8,6 +8,18 @@ This Vite-compatible plugin enables concurrent execution of TLA modules.
 Note that this plugin requires TLA support at runtime; it does _not_ provide a TLA polyfill.
 For that, check out [vite-plugin-top-level-await](https://www.npmjs.com/package/vite-plugin-top-level-await).
 
+### Evaluation Order
+
+The evaluation order closely matches V8's behavior according to [tla-fuzzer](https://github.com/evanw/tla-fuzzer).
+Minor deviations can still occur though.
+
+| Variant                  | Rollup | Rollup with Plugin |
+| ------------------------ | ------ | ------------------ |
+| Simple                   | 80%    | 99%                |
+| Trailing Promise         | 10%    | 99%                |
+| Cyclic                   | 69%    | 99%                |
+| Cyclic, Trailing Promise | 15%    | 99%                |
+
 ## Installation
 
 Using npm:
@@ -74,23 +86,6 @@ flowchart LR
 If the red modules contain top level awaits, these and their yellow ancestors should be included in the plugin's `include` option.
 
 ## Known Limitations
-
-### Execution Order
-
-We currently prioritize minimizing the required code transformations over complete compliance with the standard.
-As a result, the execution order of TLA modules may differ from the standard behavior in certain cases, as can be seen
-by the results for [tla-fuzzer](https://github.com/evanw/tla-fuzzer):
-
-| Variant                  | Rollup | Rollup with Plugin |
-| ------------------------ | ------ | ------------------ |
-| Simple                   | 80%    | 100%               |
-| Trailing Promise         | 10%    | 94%                |
-| Cyclic                   | 69%    | 77%                |
-| Cyclic, Trailing Promise | 15%    | 64%                |
-
-Please do not rely on a specific execution order when using this plugin.
-
-We might adapt Webpack's approach in the future to improve correctness.
 
 ### Build Performance
 
