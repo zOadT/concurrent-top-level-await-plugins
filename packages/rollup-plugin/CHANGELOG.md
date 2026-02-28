@@ -1,5 +1,13 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.2.1
+
+### Patch Changes
+
+- [#33](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/33) [`9a83f45`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/9a83f45224f87bff573543d3fcf9aecc134ab2bf) Thanks [@zOadT](https://github.com/zOadT)! - await evaluation of dynamically imported modules in circular chunks
+
+- [#30](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/30) [`da0357a`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/da0357a39e0e2bd3f48550902c1b4c5d7969cb9b) Thanks [@zOadT](https://github.com/zOadT)! - correctly handle import attributes when resolving imports
+
 ## 0.2.0
 
 ### Minor Changes
