@@ -101,6 +101,105 @@ describe("rollup-plugin", () => {
 		expect(pluginCalls).toStrictEqual(rollupCalls);
 	});
 
+	describe("dynamic imports", () => {
+		it("handles dynamic imports", async () => {
+			const bundle = await rollup({
+				input: path.join(__dirname, "examples", "dynamic-imports", "index.js"),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+
+			const { traces } = await runBundle(bundle);
+
+			expect(traces).toEqual([
+				"index before",
+				"a before",
+				"b before",
+				"b in between",
+				"b after",
+				"a after",
+				"index after",
+			]);
+		});
+
+		it("handles dynamic entry cycles", async () => {
+			const bundle1 = await rollup({
+				input: path.join(
+					__dirname,
+					"examples",
+					"dynamic-cycle-entry",
+					"index.js",
+				),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+			// @ts-expect-error
+			globalThis.path = 1;
+			const { traces: traces1 } = await runBundle(bundle1);
+
+			const bundle2 = await rollup({
+				input: path.join(
+					__dirname,
+					"examples",
+					"dynamic-cycle-entry",
+					"index.js",
+				),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+			// @ts-expect-error
+			globalThis.path = 2;
+			const { traces: traces2 } = await runBundle(bundle2);
+
+			// order does not align with V8's module evaluation order
+			expect(traces1.sort()).toEqual(
+				[
+					"index before",
+					"d before",
+					"d in between",
+					"d after",
+					"c before",
+					"c in between",
+					"c after",
+					"b before",
+					"b in between",
+					"b after",
+					"a before",
+					"a in between",
+					"a after",
+					"index after",
+				].sort(),
+			);
+			expect(traces2.sort()).toEqual(
+				[
+					"index before",
+					"b before",
+					"b in between",
+					"b after",
+					"a before",
+					"a in between",
+					"a after",
+					"d before",
+					"d in between",
+					"d after",
+					"c before",
+					"c in between",
+					"c after",
+					"index after",
+				].sort(),
+			);
+		});
+	});
+
 	it("respects isEntry in cycle", async () => {
 		const bundle = await rollup({
 			input: path.join(__dirname, "examples", "cyclic-entry", "index.js"),
