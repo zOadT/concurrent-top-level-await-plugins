@@ -200,15 +200,21 @@ export default function concurrentTopLevelAwait(
 			}
 
 			const moduleInfo = this.getModuleInfo(moduleId);
-			const importers = moduleInfo?.importers;
 
-			// `isEntry` check is required for when the entry module is inside a cycle
-			if (moduleInfo?.isEntry || !importers?.length) {
+			if (moduleInfo?.isEntry) {
 				return "true";
 			}
 
-			// module has to behave like an ordinary async module for modules not handled by the plugin
-			if (importers.some((id) => !filter(id))) {
+			// modules that are dynamically imported must block, so the promise returned
+			// by the dynamic import can only resolve once the module is fully evaluated
+			if (moduleInfo?.dynamicImporters.length) {
+				return "true";
+			}
+
+			// modules must behave like ordinary async modules for modules that are not
+			// handled by the plugin
+			const importers = moduleInfo?.importers;
+			if (importers?.some((id) => !filter(id))) {
 				return "true";
 			}
 
