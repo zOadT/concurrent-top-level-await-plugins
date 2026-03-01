@@ -1,4 +1,4 @@
-import "./a";
+import "./a.js";
 
 trace("index before");
 

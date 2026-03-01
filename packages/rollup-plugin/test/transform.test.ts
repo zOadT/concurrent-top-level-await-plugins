@@ -18,7 +18,7 @@ async function runTransform(
 		.filter((a) => a.type === "ImportDeclaration")
 		.filter((a) => asyncFilter(a.source.value as string));
 
-	transform(s, ast, importDeclarations, hasAwait, "__tla");
+	transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
 
 	return format(s.toString(), {
 		parser: "babel",
@@ -38,7 +38,8 @@ describe("transform", () => {
 
 		it("adds import for __tla_access", async () => {
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import a from "./a";
+				"import __tla_register from "\\u0000__tlaRegister";
+				import a from "./a";
 				import { __tla_access as __tla0 } from "./a";
 				import { b } from "./b";
 				import { __tla_access as __tla1 } from "./b";
@@ -47,26 +48,12 @@ describe("transform", () => {
 				async function __tla_initModuleExports() {
 					console.log(a, b, c);
 				}
-				const __tla = Promise.all(
-					[__tla0, __tla1, __tla2]
-						.flatMap((a) => {
-							try {
-								const result = a();
-								if (Array.isArray(result)) {
-									return result;
-								}
-								return [a];
-							} catch {
-								return []; // happens for cyclic dependencies
-							}
-						})
-						.map((e) => e()),
-				).then(() => __tla_initModuleExports());
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, [
+					() => __tla0,
+					() => __tla1,
+					() => __tla2,
+				]);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -74,55 +61,38 @@ describe("transform", () => {
 		it("only applies logic to async modules", async () => {
 			expect(await runTransform(code, (id) => id != "./b", true))
 				.toMatchInlineSnapshot(`
-				"import a from "./a";
-				import { __tla_access as __tla0 } from "./a";
-				import { b } from "./b";
-				import * as c from "./c";
-				import { __tla_access as __tla1 } from "./c";
-				async function __tla_initModuleExports() {
-					console.log(a, b, c);
-				}
-				const __tla = Promise.all(
-					[__tla0, __tla1]
-						.flatMap((a) => {
-							try {
-								const result = a();
-								if (Array.isArray(result)) {
-									return result;
-								}
-								return [a];
-							} catch {
-								return []; // happens for cyclic dependencies
-							}
-						})
-						.map((e) => e()),
-				).then(() => __tla_initModuleExports());
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
-				"
-			`);
+					"import __tla_register from "\\u0000__tlaRegister";
+					import a from "./a";
+					import { __tla_access as __tla0 } from "./a";
+					import { b } from "./b";
+					import * as c from "./c";
+					import { __tla_access as __tla1 } from "./c";
+					async function __tla_initModuleExports() {
+						console.log(a, b, c);
+					}
+					export const __tla_access = __tla_register(__tla_initModuleExports, [
+						() => __tla0,
+						() => __tla1,
+					]);
+					if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+					"
+				`);
 		});
 
 		it("handles no async modules", async () => {
 			expect(await runTransform(code, () => false, true))
 				.toMatchInlineSnapshot(`
-				"import a from "./a";
-				import { b } from "./b";
-				import * as c from "./c";
-				async function __tla_initModuleExports() {
-					console.log(a, b, c);
-				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
-				"
-			`);
+					"import __tla_register from "\\u0000__tlaRegister";
+					import a from "./a";
+					import { b } from "./b";
+					import * as c from "./c";
+					async function __tla_initModuleExports() {
+						console.log(a, b, c);
+					}
+					export const __tla_access = __tla_register(__tla_initModuleExports, []);
+					if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+					"
+				`);
 		});
 	});
 
@@ -135,43 +105,18 @@ describe("transform", () => {
 			`;
 			expect(await runTransform(code, () => true, false))
 				.toMatchInlineSnapshot(`
-				"import a from "./a";
-				import { __tla_access as __tla0 } from "./a";
-				async function __tla_initModuleExports() {
-					console.log(a);
-				}
-				const __tla = [__tla0].flatMap((a) => {
-					try {
-						const result = a();
-						if (Array.isArray(result)) {
-							return result;
-						}
-						return [a];
-					} catch {
-						return []; // happens for cyclic dependencies
+					"import __tla_register from "\\u0000__tlaRegister";
+					import a from "./a";
+					import { __tla_access as __tla0 } from "./a";
+					function __tla_initModuleExports() {
+						console.log(a);
 					}
-				});
-				const __tla_initPromise = Promise.all(
-					[__tla0]
-						.flatMap((a) => {
-							try {
-								const result = a();
-								if (Array.isArray(result)) {
-									return result;
-								}
-								return [a];
-							} catch {
-								return []; // happens for cyclic dependencies
-							}
-						})
-						.map((e) => e()),
-				).then(() => __tla_initModuleExports());
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
-				"
-			`);
+					export const __tla_access = __tla_register(__tla_initModuleExports, [
+						() => __tla0,
+					]);
+					if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+					"
+				`);
 		});
 	});
 
@@ -185,19 +130,16 @@ describe("transform", () => {
 				console.log('B');`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"function a() {
+				"import __tla_register from "\\u0000__tlaRegister";
+				function a() {
 					return 123;
 				}
 				async function __tla_initModuleExports() {
 					console.log("A");
 					console.log("B");
 				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, []);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -214,7 +156,8 @@ describe("transform", () => {
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"let a;
+				"import __tla_register from "\\u0000__tlaRegister";
+				let a;
 				function b() {
 					return 123;
 				}
@@ -224,12 +167,8 @@ describe("transform", () => {
 					};
 					123;
 				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, []);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -247,7 +186,8 @@ describe("transform", () => {
 				console.log("B");
 			`;
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"let A;
+				"import __tla_register from "\\u0000__tlaRegister";
+				let A;
 				async function __tla_initModuleExports() {
 					console.log("A");
 					A = class A {
@@ -257,12 +197,8 @@ describe("transform", () => {
 					};
 					console.log("B");
 				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, []);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -280,7 +216,8 @@ describe("transform", () => {
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"let A;
+				"import __tla_register from "\\u0000__tlaRegister";
+				let A;
 				async function __tla_initModuleExports() {
 					console.log("A");
 					A =
@@ -292,12 +229,8 @@ describe("transform", () => {
 						};
 					console.log("B");
 				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, []);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -314,7 +247,8 @@ describe("transform", () => {
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"let A;
+				"import __tla_register from "\\u0000__tlaRegister";
+				let A;
 				async function __tla_initModuleExports() {
 					console.log("A");
 					A =
@@ -327,12 +261,8 @@ describe("transform", () => {
 						};
 					console.log("B");
 				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, []);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -350,20 +280,17 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"export default function a() {
-						return 123;
-					}
-					async function __tla_initModuleExports() {
-						console.log("A");
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						export default function a() {
+							return 123;
+						}
+						async function __tla_initModuleExports() {
+							console.log("A");
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 
 			it("handles named export", async () => {
@@ -376,18 +303,15 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"export function a() {
+						"import __tla_register from "\\u0000__tlaRegister";
+						export function a() {
 							return 123;
 						}
 						async function __tla_initModuleExports() {
 							console.log("A");
 						}
-						const __tla = __tla_initModuleExports();
-						const __tla_initPromise = __tla;
-						if (import.meta.useTla) await __tla_initPromise;
-						export function __tla_access() {
-							return __tla;
-						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 						"
 					`);
 			});
@@ -407,7 +331,8 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"let __tla_default;
+							"import __tla_register from "\\u0000__tlaRegister";
+							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								__tla_default =
@@ -419,12 +344,8 @@ describe("transform", () => {
 									};
 								console.log("A");
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -441,7 +362,8 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"let A;
+							"import __tla_register from "\\u0000__tlaRegister";
+							let A;
 							export { A as default };
 							async function __tla_initModuleExports() {
 								A =
@@ -453,12 +375,8 @@ describe("transform", () => {
 									};
 								console.log("A");
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -477,7 +395,8 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export let A;
+							"import __tla_register from "\\u0000__tlaRegister";
+							export let A;
 							async function __tla_initModuleExports() {
 								A = class A {
 									method() {
@@ -486,12 +405,8 @@ describe("transform", () => {
 								};
 								console.log("A");
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -508,7 +423,8 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export let A;
+							"import __tla_register from "\\u0000__tlaRegister";
+							export let A;
 							async function __tla_initModuleExports() {
 								A =
 									@decorator
@@ -519,12 +435,8 @@ describe("transform", () => {
 									};
 								console.log("A");
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -540,17 +452,14 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"let __tla_default;
+							"import __tla_register from "\\u0000__tlaRegister";
+							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								__tla_default = "a";
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -562,17 +471,14 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"let __tla_default;
+							"import __tla_register from "\\u0000__tlaRegister";
+							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								__tla_default = await "a";
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -585,19 +491,16 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"let a;
+							"import __tla_register from "\\u0000__tlaRegister";
+							let a;
 							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								a = await 1;
 								__tla_default = a;
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -610,19 +513,16 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"let a, b;
+							"import __tla_register from "\\u0000__tlaRegister";
+							let a, b;
 							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								(a, b);
 								__tla_default = { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -635,19 +535,16 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"let a, b, c;
+							"import __tla_register from "\\u0000__tlaRegister";
+							let a, b, c;
 							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								(a, b, c);
 								__tla_default = [a, [b, c]] = [1, [2, 3]];
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -662,17 +559,14 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export let a, b;
+							"import __tla_register from "\\u0000__tlaRegister";
+							export let a, b;
 							async function __tla_initModuleExports() {
 								((a = 1), (b = 2));
 								console.log("A");
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -685,17 +579,14 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export let a, b;
+							"import __tla_register from "\\u0000__tlaRegister";
+							export let a, b;
 							async function __tla_initModuleExports() {
 								((a = 1), (b = 2));
 								console.log("A");
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -708,17 +599,14 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export var a, b;
+							"import __tla_register from "\\u0000__tlaRegister";
+							export var a, b;
 							async function __tla_initModuleExports() {
 								((a = 1), (b = 2));
 								console.log("A");
 							}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -732,21 +620,18 @@ describe("transform", () => {
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-						"export let a, b;
-						export let x, y, z;
-						async function __tla_initModuleExports() {
-							({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
-							[x, [y, z]] = [1, [2, 3]];
-							console.log("A");
-						}
-						const __tla = __tla_initModuleExports();
-						const __tla_initPromise = __tla;
-						if (import.meta.useTla) await __tla_initPromise;
-						export function __tla_access() {
-							return __tla;
-						}
-						"
-					`);
+							"import __tla_register from "\\u0000__tlaRegister";
+							export let a, b;
+							export let x, y, z;
+							async function __tla_initModuleExports() {
+								({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
+								[x, [y, z]] = [1, [2, 3]];
+								console.log("A");
+							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							"
+						`);
 				});
 			});
 
@@ -757,14 +642,11 @@ describe("transform", () => {
 					`;
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export { a, b as c };
+							"import __tla_register from "\\u0000__tlaRegister";
+							export { a, b as c };
 							async function __tla_initModuleExports() {}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -775,14 +657,11 @@ describe("transform", () => {
 					`;
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"export { foo, default as def } from "./mod";
+							"import __tla_register from "\\u0000__tlaRegister";
+							export { foo, default as def } from "./mod";
 							async function __tla_initModuleExports() {}
-							const __tla = __tla_initModuleExports();
-							const __tla_initPromise = __tla;
-							if (import.meta.useTla) await __tla_initPromise;
-							export function __tla_access() {
-								return __tla;
-							}
+							export const __tla_access = __tla_register(__tla_initModuleExports, []);
+							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 							"
 						`);
 				});
@@ -798,16 +677,13 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"export * from "module";
+						"import __tla_register from "\\u0000__tlaRegister";
+						export * from "module";
 						async function __tla_initModuleExports() {
 							console.log("A");
 						}
-						const __tla = __tla_initModuleExports();
-						const __tla_initPromise = __tla;
-						if (import.meta.useTla) await __tla_initPromise;
-						export function __tla_access() {
-							return __tla;
-						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 						"
 					`);
 			});
@@ -820,16 +696,13 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"export * as ident from "module";
+						"import __tla_register from "\\u0000__tlaRegister";
+						export * as ident from "module";
 						async function __tla_initModuleExports() {
 							console.log("A");
 						}
-						const __tla = __tla_initModuleExports();
-						const __tla_initPromise = __tla;
-						if (import.meta.useTla) await __tla_initPromise;
-						export function __tla_access() {
-							return __tla;
-						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 						"
 					`);
 			});
@@ -843,16 +716,13 @@ describe("transform", () => {
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"let a, b;
+				"import __tla_register from "\\u0000__tlaRegister";
+				let a, b;
 				async function __tla_initModuleExports() {
 					((a = 1), (b = 2));
 				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, []);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -867,20 +737,17 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"var a, b;
-					async function __tla_initModuleExports() {
-						try {
-							((a = 1), (b = 2));
-						} catch (e) {}
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						var a, b;
+						async function __tla_initModuleExports() {
+							try {
+								((a = 1), (b = 2));
+							} catch (e) {}
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 
 			it("does not hoist non var declarations", async () => {
@@ -892,20 +759,17 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"async function __tla_initModuleExports() {
-						try {
-							let a = 1,
-								b = 2;
-						} catch (e) {}
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						async function __tla_initModuleExports() {
+							try {
+								let a = 1,
+									b = 2;
+							} catch (e) {}
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 
 			it("does not hoist var declarations inside functions", async () => {
@@ -919,22 +783,19 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"async function __tla_initModuleExports() {
-						try {
-							function test() {
-								var a = 1,
-									b = 2;
-							}
-						} catch (e) {}
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						async function __tla_initModuleExports() {
+							try {
+								function test() {
+									var a = 1,
+										b = 2;
+								}
+							} catch (e) {}
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 		});
 
@@ -945,17 +806,14 @@ describe("transform", () => {
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"var a, b;
+				"import __tla_register from "\\u0000__tlaRegister";
+				var a, b;
 				async function __tla_initModuleExports() {
 					dontCallMe;
 					((a = 1), (b = 2));
 				}
-				const __tla = __tla_initModuleExports();
-				const __tla_initPromise = __tla;
-				if (import.meta.useTla) await __tla_initPromise;
-				export function __tla_access() {
-					return __tla;
-				}
+				export const __tla_access = __tla_register(__tla_initModuleExports, []);
+				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 				"
 			`);
 		});
@@ -968,18 +826,15 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"let a, b;
-					async function __tla_initModuleExports() {
-						({ a, c: b = 3 } = { a: 1, c: 2 });
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						let a, b;
+						async function __tla_initModuleExports() {
+							({ a, c: b = 3 } = { a: 1, c: 2 });
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 
 			it("handles nested destructuring", async () => {
@@ -989,18 +844,15 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"let a, b;
-					async function __tla_initModuleExports() {
-						({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						let a, b;
+						async function __tla_initModuleExports() {
+							({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 
 			it("handles rest property", async () => {
@@ -1010,18 +862,15 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"let a, b;
-					async function __tla_initModuleExports() {
-						({ a, ...b } = { a: 1, c: 2, d: 3 });
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						let a, b;
+						async function __tla_initModuleExports() {
+							({ a, ...b } = { a: 1, c: 2, d: 3 });
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 		});
 
@@ -1033,18 +882,15 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"let a, b;
-					async function __tla_initModuleExports() {
-						[a, b = 3] = [1, 2];
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						let a, b;
+						async function __tla_initModuleExports() {
+							[a, b = 3] = [1, 2];
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 
 			it("handles nested array destructuring", async () => {
@@ -1054,18 +900,15 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"let a, b, c;
-					async function __tla_initModuleExports() {
-						[a, [b, c]] = [1, [2, 3]];
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						let a, b, c;
+						async function __tla_initModuleExports() {
+							[a, [b, c]] = [1, [2, 3]];
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 
 			it("handles rest element", async () => {
@@ -1075,18 +918,15 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-					"let a, b;
-					async function __tla_initModuleExports() {
-						[a, ...b] = [1, 2, 3];
-					}
-					const __tla = __tla_initModuleExports();
-					const __tla_initPromise = __tla;
-					if (import.meta.useTla) await __tla_initPromise;
-					export function __tla_access() {
-						return __tla;
-					}
-					"
-				`);
+						"import __tla_register from "\\u0000__tlaRegister";
+						let a, b;
+						async function __tla_initModuleExports() {
+							[a, ...b] = [1, 2, 3];
+						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						"
+					`);
 			});
 		});
 
@@ -1099,7 +939,8 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"let resourceA;
+						"import __tla_register from "\\u0000__tlaRegister";
+						let resourceA;
 						let resourceB;
 						async function __tla_initModuleExports() {
 							using __tla_using_resourceA = getResourceA(),
@@ -1108,12 +949,8 @@ describe("transform", () => {
 							resourceB = __tla_using_resourceB;
 							console.log(resourceA);
 						}
-						const __tla = __tla_initModuleExports();
-						const __tla_initPromise = __tla;
-						if (import.meta.useTla) await __tla_initPromise;
-						export function __tla_access() {
-							return __tla;
-						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 						"
 					`);
 			});
@@ -1126,7 +963,8 @@ describe("transform", () => {
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"let resourceA;
+						"import __tla_register from "\\u0000__tlaRegister";
+						let resourceA;
 						let resourceB;
 						async function __tla_initModuleExports() {
 							await using __tla_using_resourceA = getResourceA(),
@@ -1135,12 +973,8 @@ describe("transform", () => {
 							resourceB = __tla_using_resourceB;
 							console.log(resourceA);
 						}
-						const __tla = __tla_initModuleExports();
-						const __tla_initPromise = __tla;
-						if (import.meta.useTla) await __tla_initPromise;
-						export function __tla_access() {
-							return __tla;
-						}
+						export const __tla_access = __tla_register(__tla_initModuleExports, []);
+						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
 						"
 					`);
 			});

@@ -12,7 +12,8 @@ import { visitScope } from "./ast.js";
 export default function transform(
 	s: MagicString,
 	ast: RollupAstNode<Program>,
-	asyncImports: (ImportDeclaration | null)[],
+	registerModuleSource: string,
+	asyncImports: ImportDeclaration[],
 	hasAwait: boolean,
 	variablePrefix: string,
 ) {
@@ -25,40 +26,23 @@ export default function transform(
 
 	s.appendRight(
 		declarationsEnd,
-		`async function ${variablePrefix}_initModuleExports() {\n`,
+		`${hasAwait ? "async " : ""}function ${variablePrefix}_initModuleExports() {\n`,
 	);
 	s.append("\n}\n");
 
-	// TODO check empty case
-	const asyncDeps = `[${asyncImports.map((_, i) => `${variablePrefix}${i}`).join()}].flatMap(a => {
-	try {
-		const result = a();
-		if (Array.isArray(result)) {
-			return result
-		}
-		return [a];
-	} catch {
-		return []; // happens for cyclic dependencies
-	}
-})`;
-	// TODO check empty case
-	const initModuleExportsAfterDeps =
-		asyncImports.length === 0
-			? `${variablePrefix}_initModuleExports()`
-			: `Promise.all(${asyncDeps}.map(e => e())).then(() => ${variablePrefix}_initModuleExports())`;
-	if (hasAwait) {
-		s.append(
-			`const ${variablePrefix} = ${initModuleExportsAfterDeps};\nconst ${variablePrefix}_initPromise = ${variablePrefix};\n`,
-		);
-	} else {
-		s.append(
-			`const ${variablePrefix} = ${asyncDeps};\nconst ${variablePrefix}_initPromise = ${initModuleExportsAfterDeps};\n`,
-		);
-	}
+	s.prepend(
+		`import ${variablePrefix}_register from ${JSON.stringify(registerModuleSource)};\n`,
+	);
 
-	s.append(`if (import.meta.useTla) await ${variablePrefix}_initPromise;\n`);
+	// TODO check empty case
+	const asyncDeps = `[${asyncImports.map((_, i) => `() => ${variablePrefix}${i}`).join(", ")}]`;
+
 	s.append(
-		`export function ${variablePrefix}_access() { return ${variablePrefix}; };\n`,
+		`export const ${variablePrefix}_access = ${variablePrefix}_register(${variablePrefix}_initModuleExports, ${asyncDeps});\n`,
+	);
+
+	s.append(
+		`if (import.meta.useTla) await new Promise(resolve => ${variablePrefix}_access(resolve));\n`,
 	);
 }
 

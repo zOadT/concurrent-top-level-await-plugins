@@ -24,6 +24,58 @@ function resolveDeclarationSource(
 	});
 }
 
+// Kudos to evanw for figuring out the registry strategy in https://github.com/evanw/tla-fuzzer
+const tlaModule = `export default function register(fn, evaluate_accesses) {
+    let state = "ready";
+    let whenDones = [];
+    let remaining = 1;
+
+    // evaluate eagerly
+    evaluate();
+
+    return evaluate;
+
+    function evaluate(whenDone) {
+        if (state === "done") {
+            if (whenDone)
+                whenDone();
+            return;
+        }
+        if (whenDone)
+            whenDones.push(whenDone);
+        if (state === "busy") {
+            return;
+        }
+        state = "busy";
+        let moduleDone = () => {
+            state = "done";
+            for (let x of whenDones)
+                x();
+        };
+        let importDone = () => {
+            if (--remaining !== 0)
+                return;
+            let result = fn();
+            if (result) {
+                result.then(moduleDone);
+            }
+            else {
+                moduleDone();
+            }
+        };
+        for (const access of evaluate_accesses) {
+            try {
+                const evaluate = access(); // throws for cyclic dependencies
+                remaining++;
+                evaluate(importDone);
+            }
+            catch (_a) { }
+        }
+        importDone();
+    }
+}
+`;
+
 export default function concurrentTopLevelAwait(
 	options: {
 		include?: FilterPattern;
@@ -39,6 +91,9 @@ export default function concurrentTopLevelAwait(
 ) {
 	const filter = createFilter(options.include, options.exclude);
 
+	const generatedVariablePrefix = options.generatedVariablePrefix ?? "__tla";
+	const registerModuleSource = `\0${generatedVariablePrefix}Register`;
+
 	const asyncTracker = new AsyncModuleTracker<string>();
 
 	return {
@@ -46,6 +101,17 @@ export default function concurrentTopLevelAwait(
 		// @ts-expect-error vite specific properties
 		// vite serves modules as ES modules during dev and thus TLA gets handled natively
 		apply: "build" as const,
+
+		resolveId(source) {
+			if (source === registerModuleSource) {
+				return registerModuleSource;
+			}
+		},
+		load(id) {
+			if (id === registerModuleSource) {
+				return tlaModule;
+			}
+		},
 
 		transform: {
 			// filter: {
@@ -65,29 +131,13 @@ export default function concurrentTopLevelAwait(
 
 				const hasAwait = hasTopLevelAwait(ast);
 				asyncTracker.setEntryAsync(id, hasAwait);
+
 				if (hasAwait) {
 					// we can skip adding dependencies here, as we know that the module is async anyway
 					asyncTracker.setDependencies(id, []);
-				} else {
-					const childrenIds = (
-						await Promise.all(
-							importDeclarations.map(async (declaration) => {
-								const importId = await resolveDeclarationSource(
-									this,
-									id,
-									transformOptions?.attributes,
-									declaration,
-								);
-								if (!importId || !filter(importId.id)) return null;
-								return importId.id;
-							}),
-						)
-					).filter((a) => a != null);
-
-					asyncTracker.setDependencies(id, childrenIds);
 				}
 
-				const asyncImports = (
+				let imports = (
 					await Promise.all(
 						importDeclarations.map(async (declaration) => {
 							const importId = await resolveDeclarationSource(
@@ -97,13 +147,31 @@ export default function concurrentTopLevelAwait(
 								declaration,
 							);
 							if (!importId || !filter(importId.id)) return null;
+							return {
+								declaration,
+								id: importId.id,
+							};
+						}),
+					)
+				).filter(Boolean) as { declaration: ImportDeclaration; id: string }[];
+
+				if (!hasAwait) {
+					asyncTracker.setDependencies(
+						id,
+						imports.map((x) => x.id),
+					);
+				}
+
+				const asyncImports = (
+					await Promise.all(
+						imports.map(async ({ declaration, id }) => {
 							// don't await load to not run into deadlock
-							this.load(importId);
-							if (!(await asyncTracker.isAsync(importId.id))) return null;
+							this.load({ id });
+							if (!(await asyncTracker.isAsync(id))) return null;
 							return declaration;
 						}),
 					)
-				).filter(Boolean);
+				).filter(Boolean) as ImportDeclaration[];
 
 				const isAsyncModule = asyncImports.length > 0 || hasAwait;
 				if (!isAsyncModule) return;
@@ -113,6 +181,7 @@ export default function concurrentTopLevelAwait(
 				transform(
 					s,
 					ast,
+					registerModuleSource,
 					asyncImports,
 					hasAwait,
 					options.generatedVariablePrefix ?? "__tla",
