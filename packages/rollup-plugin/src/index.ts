@@ -65,7 +65,12 @@ const tlaModule = `export default function register(fn, evaluate_accesses) {
         };
         for (const access of evaluate_accesses) {
             try {
-                const evaluate = access(); // throws for cyclic dependencies
+                // Environment-dependent behavior:
+                // - throws on cyclic dependencies in V8
+                // - returns undefined in some environments (e.g., vitest)
+                const evaluate = access();
+                if (evaluate == null)
+                    continue;
                 remaining++;
                 evaluate(importDone);
             }
