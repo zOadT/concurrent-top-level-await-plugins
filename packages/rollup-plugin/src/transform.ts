@@ -42,7 +42,7 @@ export default function transform(
 	);
 
 	s.append(
-		`if (import.meta.useTla) await new Promise(resolve => ${variablePrefix}_access(resolve));\n`,
+		`if (import.meta.useTla) await new Promise(${variablePrefix}_access);\n`,
 	);
 }
 

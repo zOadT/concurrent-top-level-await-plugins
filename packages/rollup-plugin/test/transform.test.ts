@@ -53,7 +53,7 @@ describe("transform", () => {
 					() => __tla1,
 					() => __tla2,
 				]);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -74,7 +74,7 @@ describe("transform", () => {
 						() => __tla0,
 						() => __tla1,
 					]);
-					if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+					if (import.meta.useTla) await new Promise(__tla_access);
 					"
 				`);
 		});
@@ -90,7 +90,7 @@ describe("transform", () => {
 						console.log(a, b, c);
 					}
 					export const __tla_access = __tla_register(__tla_initModuleExports, []);
-					if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+					if (import.meta.useTla) await new Promise(__tla_access);
 					"
 				`);
 		});
@@ -114,7 +114,7 @@ describe("transform", () => {
 					export const __tla_access = __tla_register(__tla_initModuleExports, [
 						() => __tla0,
 					]);
-					if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+					if (import.meta.useTla) await new Promise(__tla_access);
 					"
 				`);
 		});
@@ -139,7 +139,7 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -168,7 +168,7 @@ describe("transform", () => {
 					123;
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -198,7 +198,7 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -230,7 +230,7 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -262,7 +262,7 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -288,7 +288,7 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -311,7 +311,7 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -345,7 +345,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -376,7 +376,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -406,7 +406,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -436,7 +436,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -459,7 +459,7 @@ describe("transform", () => {
 								__tla_default = "a";
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -478,7 +478,7 @@ describe("transform", () => {
 								__tla_default = await "a";
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -500,7 +500,7 @@ describe("transform", () => {
 								__tla_default = a;
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -522,7 +522,7 @@ describe("transform", () => {
 								__tla_default = { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -544,7 +544,7 @@ describe("transform", () => {
 								__tla_default = [a, [b, c]] = [1, [2, 3]];
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -566,7 +566,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -586,7 +586,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -606,7 +606,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -629,7 +629,7 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -646,7 +646,7 @@ describe("transform", () => {
 							export { a, b as c };
 							async function __tla_initModuleExports() {}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -661,7 +661,7 @@ describe("transform", () => {
 							export { foo, default as def } from "./mod";
 							async function __tla_initModuleExports() {}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -683,7 +683,7 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -702,7 +702,7 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -722,7 +722,7 @@ describe("transform", () => {
 					((a = 1), (b = 2));
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -745,7 +745,7 @@ describe("transform", () => {
 							} catch (e) {}
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -767,7 +767,7 @@ describe("transform", () => {
 							} catch (e) {}
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -793,7 +793,7 @@ describe("transform", () => {
 							} catch (e) {}
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -813,7 +813,7 @@ describe("transform", () => {
 					((a = 1), (b = 2));
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -832,7 +832,7 @@ describe("transform", () => {
 							({ a, c: b = 3 } = { a: 1, c: 2 });
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -850,7 +850,7 @@ describe("transform", () => {
 							({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -868,7 +868,7 @@ describe("transform", () => {
 							({ a, ...b } = { a: 1, c: 2, d: 3 });
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -888,7 +888,7 @@ describe("transform", () => {
 							[a, b = 3] = [1, 2];
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -906,7 +906,7 @@ describe("transform", () => {
 							[a, [b, c]] = [1, [2, 3]];
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -924,7 +924,7 @@ describe("transform", () => {
 							[a, ...b] = [1, 2, 3];
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -950,7 +950,7 @@ describe("transform", () => {
 							console.log(resourceA);
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -974,7 +974,7 @@ describe("transform", () => {
 							console.log(resourceA);
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise((resolve) => __tla_access(resolve));
+						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});

@@ -28,21 +28,29 @@ function resolveDeclarationSource(
 const tlaModule = `export default function register(fn, evaluate_accesses) {
     let state = "ready";
     let whenDones = [];
+    let whenErrors = [];
     let remaining = 1;
-
+    let error = undefined;
     // evaluate eagerly
     evaluate();
 
     return evaluate;
 
-    function evaluate(whenDone) {
+    function evaluate(whenDone, onError) {
         if (state === "done") {
             if (whenDone)
                 whenDone();
             return;
         }
+        if (state === "failed") {
+            if (onError)
+                onError(error);
+            return;
+        }
         if (whenDone)
             whenDones.push(whenDone);
+        if (onError)
+            whenErrors.push(onError);
         if (state === "busy") {
             return;
         }
@@ -52,29 +60,47 @@ const tlaModule = `export default function register(fn, evaluate_accesses) {
             for (let x of whenDones)
                 x();
         };
+        let moduleError = (err) => {
+            state = "failed";
+            error = err;
+            for (let x of whenErrors)
+                x(err);
+        };
         let importDone = () => {
+            if (state !== "busy")
+                return;
             if (--remaining !== 0)
                 return;
-            let result = fn();
-            if (result) {
-                result.then(moduleDone);
+            try {
+                let result = fn();
+                if (result) {
+                    result
+                        .then(moduleDone)
+                        .catch(moduleError);
+                }
+                else {
+                    moduleDone();
+                }
             }
-            else {
-                moduleDone();
+            catch (err) {
+                moduleError(err);
             }
         };
         for (const access of evaluate_accesses) {
+            let evaluate;
             try {
                 // Environment-dependent behavior:
                 // - throws on cyclic dependencies in V8
                 // - returns undefined in some environments (e.g., vitest)
-                const evaluate = access();
+                evaluate = access();
                 if (evaluate == null)
                     continue;
-                remaining++;
-                evaluate(importDone);
             }
-            catch (_a) { }
+            catch (_a) {
+                continue;
+            }
+            remaining++;
+            evaluate(importDone, moduleError);
         }
         importDone();
     }

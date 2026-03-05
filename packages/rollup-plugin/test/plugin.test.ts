@@ -5,7 +5,7 @@ import { CustomPluginOptions, rollup, RollupBuild } from "rollup";
 import concurrentTopLevelAwait from "../src/index.js";
 import { randomUUID } from "node:crypto";
 
-async function runBundle(bundle: RollupBuild) {
+async function runBundle(bundle: RollupBuild, cooldown = 0) {
 	const uuid = randomUUID();
 	const traces: string[] = [];
 
@@ -23,9 +23,17 @@ async function runBundle(bundle: RollupBuild) {
 }`,
 	});
 
-	const exports = await import(
-		path.join(__dirname, "dist", uuid, output[0].fileName)
-	);
+	let exports, error;
+	try {
+		exports = await import(
+			path.join(__dirname, "dist", uuid, output[0].fileName)
+		);
+	} catch (err) {
+		traces.push(`Caught error: ${err}`);
+		error = err;
+	}
+
+	await new Promise((resolve) => setTimeout(resolve, cooldown));
 
 	await fs.rm(path.join(__dirname, "dist", uuid), {
 		recursive: true,
@@ -34,7 +42,7 @@ async function runBundle(bundle: RollupBuild) {
 
 	process.off("trace", onTrace);
 
-	return { exports, traces };
+	return { exports, error, traces };
 }
 
 describe("rollup-plugin", () => {
@@ -270,6 +278,158 @@ describe("rollup-plugin", () => {
 				"a after",
 				"c before",
 				"c after",
+			]);
+		});
+	});
+
+	describe("error handling", () => {
+		describe("executes modules after a sibling throws", () => {
+			it("handles sync modules", async () => {
+				const bundle = await rollup({
+					input: path.join(
+						__dirname,
+						"examples",
+						"error-handling",
+						"noAwaitThrow.js",
+					),
+					plugins: [
+						concurrentTopLevelAwait({
+							include: "**/*.js",
+						}),
+					],
+				});
+
+				const { error, traces } = await runBundle(bundle, 200);
+
+				expect(error).toBe("no await error");
+
+				expect(traces).toEqual([
+					"sync1",
+					"sync2",
+					"sync3",
+					"noAwait1",
+					"noAwaitThrow",
+					"noAwait2",
+					"noAwait3",
+					"Caught error: no await error",
+				]);
+			});
+
+			it("handles async modules", async () => {
+				const bundle = await rollup({
+					input: path.join(
+						__dirname,
+						"examples",
+						"error-handling",
+						"directThrow.js",
+					),
+					plugins: [
+						concurrentTopLevelAwait({
+							include: "**/*.js",
+						}),
+					],
+				});
+
+				const { error, traces } = await runBundle(bundle, 200);
+
+				expect(error).toBe("direct error");
+
+				expect(traces).toEqual([
+					"sync1",
+					"directThrow",
+					"sync2",
+					"sync3",
+					"noAwait1",
+					"noAwait2",
+					"noAwait3",
+					"Caught error: direct error",
+				]);
+			});
+		});
+
+		it("sync throw stops module evaluation", async () => {
+			const bundle = await rollup({
+				input: path.join(
+					__dirname,
+					"examples",
+					"error-handling",
+					"syncThrow.js",
+				),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+
+			const { error, traces } = await runBundle(bundle, 200);
+
+			expect(error).toBe("sync error");
+
+			expect(traces).toEqual([
+				"sync1",
+				"delayedThrow",
+				"sync2",
+				"directThrow",
+				"syncThrow",
+				"noAwait1",
+				"noAwait2",
+				"Caught error: sync error",
+			]);
+		});
+
+		it("respects order of thrown errors", async () => {
+			const bundle = await rollup({
+				input: path.join(
+					__dirname,
+					"examples",
+					"error-handling",
+					"multipleThrows.js",
+				),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+
+			const { error, traces } = await runBundle(bundle, 200);
+
+			expect(error).toBe("direct error");
+
+			expect(traces).toEqual([
+				"delayedThrow",
+				"directThrow",
+				"noAwait1",
+				"noAwait2",
+				"noAwait3",
+				"Caught error: direct error",
+			]);
+		});
+
+		it("Does not abort subtrees", async () => {
+			const bundle = await rollup({
+				input: path.join(__dirname, "examples", "error-handling", "subtree.js"),
+				plugins: [
+					concurrentTopLevelAwait({
+						include: "**/*.js",
+					}),
+				],
+			});
+
+			const { error, traces } = await runBundle(bundle, 200);
+
+			expect(error).toBe("delayed error");
+
+			expect(traces).toEqual([
+				"delayedThrow",
+				"before subtree grandchildren",
+				"after subtree grandchildren",
+				"before subtree child",
+				"Caught error: delayed error",
+				"after subtree child",
+				"before subtree",
+				"after subtree",
 			]);
 		});
 	});
