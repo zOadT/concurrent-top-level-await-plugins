@@ -53,7 +53,9 @@ export default {
 
 ### Which modules to include?
 
-The plugin needs to handle not only modules that directly contain a top-level `await`, but also their ancestor modules up to the lowest common ancestor. Ancestor modules must be transformed to handle the asynchronous completion of their children concurrently. As an example, consider the following module structure:
+The plugin needs to handle not only modules that directly contain a top-level `await`, but also their ancestor modules up to the lowest common ancestor. Ancestor modules must be transformed to handle the asynchronous completion of their children concurrently. If an ancestor module is not transformed, its direct dependencies will become blocking and therefore alter the evaluation order.
+
+Consider the following module structure as an example:
 
 ```mermaid
 flowchart LR
@@ -86,6 +88,12 @@ flowchart LR
 If the red modules contain top level awaits, these and their yellow ancestors should be included in the plugin's `include` option.
 
 ## Known Limitations
+
+### Evaluation Order
+
+As can be seen in the table above, the plugin does not guarantee 100% matching of V8's evaluation order, although the deviations should be pretty minor in practice. If you encounter significant deviations, please open an issue.
+
+Additionally, some scenarios are known to cause deviations, e.g. when the [`include` option is not correctly configured](#which-modules-to-include) or when there is a dependency cycle that is split across multiple chunks.
 
 ### Build Performance
 
