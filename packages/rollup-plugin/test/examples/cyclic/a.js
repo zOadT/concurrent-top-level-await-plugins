@@ -1,7 +1,7 @@
-import "./index";
+import "./b.js";
 
-trace("b before");
+trace("a before");
 
 await new Promise((resolve) => setTimeout(resolve, 5));
 
-trace("b after");
+trace("a after");

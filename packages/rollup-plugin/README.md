@@ -8,6 +8,18 @@ This Vite-compatible plugin enables concurrent execution of TLA modules.
 Note that this plugin requires TLA support at runtime; it does _not_ provide a TLA polyfill.
 For that, check out [vite-plugin-top-level-await](https://www.npmjs.com/package/vite-plugin-top-level-await).
 
+### Evaluation Order
+
+The evaluation order closely matches V8's behavior according to [tla-fuzzer](https://github.com/evanw/tla-fuzzer).
+Minor deviations can still occur though.
+
+| Variant                  | Rollup | Rollup with Plugin |
+| ------------------------ | ------ | ------------------ |
+| Simple                   | 80%    | 99%                |
+| Trailing Promise         | 10%    | 99%                |
+| Cyclic                   | 69%    | 99%                |
+| Cyclic, Trailing Promise | 15%    | 99%                |
+
 ## Installation
 
 Using npm:
@@ -41,7 +53,9 @@ export default {
 
 ### Which modules to include?
 
-The plugin needs to handle not only modules that directly contain a top-level `await`, but also their ancestor modules up to the lowest common ancestor. Ancestor modules must be transformed to handle the asynchronous completion of their children concurrently. As an example, consider the following module structure:
+The plugin needs to handle not only modules that directly contain a top-level `await`, but also their ancestor modules up to the lowest common ancestor. Ancestor modules must be transformed to handle the asynchronous completion of their children concurrently. If an ancestor module is not transformed, its direct dependencies will become blocking and therefore alter the evaluation order.
+
+Consider the following module structure as an example:
 
 ```mermaid
 flowchart LR
@@ -75,22 +89,11 @@ If the red modules contain top level awaits, these and their yellow ancestors sh
 
 ## Known Limitations
 
-### Execution Order
+### Evaluation Order
 
-We currently prioritize minimizing the required code transformations over complete compliance with the standard.
-As a result, the execution order of TLA modules may differ from the standard behavior in certain cases, as can be seen
-by the results for [tla-fuzzer](https://github.com/evanw/tla-fuzzer):
+As can be seen in the table above, the plugin does not guarantee 100% matching of V8's evaluation order, although the deviations should be pretty minor in practice. If you encounter significant deviations, please open an issue.
 
-| Variant                  | Rollup | Rollup with Plugin |
-| ------------------------ | ------ | ------------------ |
-| Simple                   | 80%    | 100%               |
-| Trailing Promise         | 10%    | 94%                |
-| Cyclic                   | 69%    | 77%                |
-| Cyclic, Trailing Promise | 15%    | 64%                |
-
-Please do not rely on a specific execution order when using this plugin.
-
-We might adapt Webpack's approach in the future to improve correctness.
+Additionally, some scenarios are known to cause deviations, e.g. when the [`include` option is not correctly configured](#which-modules-to-include) or when there is a dependency cycle that is split across multiple chunks.
 
 ### Build Performance
 
