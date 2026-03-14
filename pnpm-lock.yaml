@@ -37,6 +37,9 @@ importers:
       magic-string:
         specifier: ^0.30.21
         version: 0.30.21
+      vite:
+        specifier: ">=5.0.0 <8.0.0"
+        version: 7.2.7(@types/node@25.2.3)
     devDependencies:
       "@types/estree":
         specifier: ^1.0.8

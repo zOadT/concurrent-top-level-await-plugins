@@ -6,3 +6,8 @@ described in [the Rolldown docs](https://github.com/rolldown/rolldown/blob/main/
 The plugins in this repository enable concurrent execution of TLA modules.
 
 Note that the plugins require TLA support at runtime; they do _not_ provide a TLA polyfill.
+
+## Plugins
+
+- [rollup-plugin-concurrent-top-level-await](./packages/rollup-plugin/README.md)
+- rolldown plugin (coming soon)
