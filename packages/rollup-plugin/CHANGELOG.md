@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.3.1
+
+### Patch Changes
+
+- [#36](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/36) [`556652a`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/556652a89a81aee584ced057c666d392a8612191) Thanks [@zOadT](https://github.com/zOadT)! - Extend README and package.json to clarify plugin compatibility with Rolldown and Vite 8
+
 ## 0.3.0
 
 ### Minor Changes
