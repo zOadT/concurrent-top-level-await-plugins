@@ -1,3 +1,6 @@
+> [!Warning]
+> This plugin uses Rollup-specific APIs and is therefore not compatible with Rolldown or Vite >= 8. For more information, see [this issue](https://github.com/zOadT/concurrent-top-level-await-plugins/issues/35).
+
 # rollup-plugin-concurrent-top-level-await
 
 Rollup (and therefore also Vite) will change the behavior of modules containing top level await (TLA):
