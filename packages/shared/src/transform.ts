@@ -1,4 +1,4 @@
-import MagicString from "magic-string";
+import type MagicString from "magic-string";
 import { RollupAstNode } from "rollup";
 import type {
 	Program,
