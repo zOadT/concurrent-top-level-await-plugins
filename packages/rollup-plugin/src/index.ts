@@ -216,7 +216,11 @@ export default function concurrentTopLevelAwait(
 					registerModuleSource,
 					asyncImports,
 					hasAwait,
-					options.generatedVariablePrefix ?? "__tla",
+					generatedVariablePrefix,
+				);
+
+				s.append(
+					`if (import.meta.useTla) await new Promise(${generatedVariablePrefix}_access);\n`,
 				);
 
 				return {

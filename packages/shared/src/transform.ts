@@ -40,10 +40,6 @@ export default function transform(
 	s.append(
 		`export const ${variablePrefix}_access = ${variablePrefix}_register(${variablePrefix}_initModuleExports, ${asyncDeps});\n`,
 	);
-
-	s.append(
-		`if (import.meta.useTla) await new Promise(${variablePrefix}_access);\n`,
-	);
 }
 
 function transformAndMoveDeclarationsToModuleScope(
