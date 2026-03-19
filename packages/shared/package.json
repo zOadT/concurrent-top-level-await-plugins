@@ -1,0 +1,30 @@
+{
+  "name": "shared",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./AsyncModuleTracker": "./src/AsyncModuleTracker.js",
+    "./hasTopLevelAwait": "./src/hasTopLevelAwait.js",
+    "./transform": "./src/transform.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zOadT/concurrent-top-level-await-plugins.git"
+  },
+  "author": "Oliver Zell",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zOadT/concurrent-top-level-await-plugins/issues"
+  },
+  "homepage": "https://github.com/zOadT/concurrent-top-level-await-plugins/tree/main/packages/rollup-plugin#readme",
+  "devDependencies": {
+    "@types/estree": "^1.0.8",
+    "magic-string": "^0.30.21",
+    "rolldown": "1.0.0-rc.9",
+    "rollup": "^4.57.1"
+  }
+}

@@ -2,9 +2,10 @@ import type { ImportDeclaration } from "estree";
 import type { Plugin, TransformPluginContext } from "rollup";
 import { createFilter, type FilterPattern } from "@rollup/pluginutils";
 import MagicString from "magic-string";
-import hasTopLevelAwait from "./hasTopLevelAwait.js";
-import { AsyncModuleTracker } from "./AsyncModuleTracker.js";
-import transform from "./transform.js";
+
+import hasTopLevelAwait from "../../shared/src/hasTopLevelAwait.js";
+import { AsyncModuleTracker } from "../../shared/src/AsyncModuleTracker.js";
+import transform from "../../shared/src/transform.js";
 
 function resolveDeclarationSource(
 	context: TransformPluginContext,
@@ -215,7 +216,11 @@ export default function concurrentTopLevelAwait(
 					registerModuleSource,
 					asyncImports,
 					hasAwait,
-					options.generatedVariablePrefix ?? "__tla",
+					generatedVariablePrefix,
+				);
+
+				s.append(
+					`if (import.meta.useTla) await new Promise(${generatedVariablePrefix}_access);\n`,
 				);
 
 				return {

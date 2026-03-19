@@ -1,16 +1,17 @@
 import MagicString from "magic-string";
-import { parseAstAsync } from "rollup/parseAst";
+import { parseAstAsync as parseAstAsyncRollup } from "rollup/parseAst";
+import { parseAstAsync as parseAstAsyncRolldown } from "rolldown/parseAst";
 import { describe, expect, it } from "vitest";
 import { format } from "prettier";
 import transform from "../src/transform.js";
 
-async function runTransform(
+async function runRollupTransform(
 	code: string,
 	asyncFilter: (id: string) => boolean,
 	hasAwait: boolean,
 ) {
 	const s = new MagicString(code);
-	const ast = await parseAstAsync(code, {
+	const ast = await parseAstAsyncRollup(code, {
 		jsx: false,
 	});
 
@@ -26,7 +27,43 @@ async function runTransform(
 	});
 }
 
-describe("transform", () => {
+async function runRolldownTransform(
+	code: string,
+	asyncFilter: (id: string) => boolean,
+	hasAwait: boolean,
+) {
+	const s = new MagicString(code);
+	const ast = await parseAstAsyncRolldown(code, {
+		// preserveParens
+		// TODO filename
+		lang: "ts",
+	});
+
+	const importDeclarations = ast.body
+		.filter((a) => a.type === "ImportDeclaration")
+		.filter((a) => asyncFilter(a.source.value as string));
+
+	// @ts-expect-error TODO
+	transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
+
+	return format(s.toString(), {
+		parser: "babel-ts",
+		useTabs: true,
+	});
+}
+
+describe.each([
+	{
+		name: "rollup transform",
+		runTransform: runRollupTransform,
+		supportTypescript: false,
+	},
+	{
+		name: "rolldown transform",
+		runTransform: runRolldownTransform,
+		supportTypescript: true,
+	},
+])("$name", ({ runTransform, supportTypescript }) => {
 	describe("import declarations", () => {
 		const code = `
 			import a from './a';
@@ -53,7 +90,6 @@ describe("transform", () => {
 					() => __tla1,
 					() => __tla2,
 				]);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -74,7 +110,6 @@ describe("transform", () => {
 						() => __tla0,
 						() => __tla1,
 					]);
-					if (import.meta.useTla) await new Promise(__tla_access);
 					"
 				`);
 		});
@@ -90,7 +125,6 @@ describe("transform", () => {
 						console.log(a, b, c);
 					}
 					export const __tla_access = __tla_register(__tla_initModuleExports, []);
-					if (import.meta.useTla) await new Promise(__tla_access);
 					"
 				`);
 		});
@@ -114,7 +148,6 @@ describe("transform", () => {
 					export const __tla_access = __tla_register(__tla_initModuleExports, [
 						() => __tla0,
 					]);
-					if (import.meta.useTla) await new Promise(__tla_access);
 					"
 				`);
 		});
@@ -139,7 +172,6 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -168,7 +200,6 @@ describe("transform", () => {
 					123;
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -198,7 +229,6 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -230,7 +260,6 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -262,7 +291,6 @@ describe("transform", () => {
 					console.log("B");
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -288,7 +316,6 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -311,7 +338,6 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -345,7 +371,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -376,7 +401,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -406,7 +430,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -436,7 +459,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -459,7 +481,6 @@ describe("transform", () => {
 								__tla_default = "a";
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -478,7 +499,6 @@ describe("transform", () => {
 								__tla_default = await "a";
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -500,7 +520,6 @@ describe("transform", () => {
 								__tla_default = a;
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -522,7 +541,6 @@ describe("transform", () => {
 								__tla_default = { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -544,7 +562,6 @@ describe("transform", () => {
 								__tla_default = [a, [b, c]] = [1, [2, 3]];
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -566,7 +583,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -586,7 +602,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -606,7 +621,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -629,7 +643,6 @@ describe("transform", () => {
 								console.log("A");
 							}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -646,7 +659,6 @@ describe("transform", () => {
 							export { a, b as c };
 							async function __tla_initModuleExports() {}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -661,7 +673,6 @@ describe("transform", () => {
 							export { foo, default as def } from "./mod";
 							async function __tla_initModuleExports() {}
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
-							if (import.meta.useTla) await new Promise(__tla_access);
 							"
 						`);
 				});
@@ -683,7 +694,6 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -702,7 +712,6 @@ describe("transform", () => {
 							console.log("A");
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -722,7 +731,6 @@ describe("transform", () => {
 					((a = 1), (b = 2));
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -745,7 +753,6 @@ describe("transform", () => {
 							} catch (e) {}
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -767,7 +774,6 @@ describe("transform", () => {
 							} catch (e) {}
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -793,7 +799,6 @@ describe("transform", () => {
 							} catch (e) {}
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -813,7 +818,6 @@ describe("transform", () => {
 					((a = 1), (b = 2));
 				}
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
-				if (import.meta.useTla) await new Promise(__tla_access);
 				"
 			`);
 		});
@@ -832,7 +836,6 @@ describe("transform", () => {
 							({ a, c: b = 3 } = { a: 1, c: 2 });
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -850,7 +853,6 @@ describe("transform", () => {
 							({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -868,7 +870,6 @@ describe("transform", () => {
 							({ a, ...b } = { a: 1, c: 2, d: 3 });
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -888,7 +889,6 @@ describe("transform", () => {
 							[a, b = 3] = [1, 2];
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -906,7 +906,6 @@ describe("transform", () => {
 							[a, [b, c]] = [1, [2, 3]];
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -924,7 +923,6 @@ describe("transform", () => {
 							[a, ...b] = [1, 2, 3];
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -950,7 +948,6 @@ describe("transform", () => {
 							console.log(resourceA);
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});
@@ -974,7 +971,6 @@ describe("transform", () => {
 							console.log(resourceA);
 						}
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
-						if (import.meta.useTla) await new Promise(__tla_access);
 						"
 					`);
 			});

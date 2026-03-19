@@ -1,4 +1,4 @@
-import MagicString from "magic-string";
+import type MagicString from "magic-string";
 import { RollupAstNode } from "rollup";
 import type {
 	Program,
@@ -39,10 +39,6 @@ export default function transform(
 
 	s.append(
 		`export const ${variablePrefix}_access = ${variablePrefix}_register(${variablePrefix}_initModuleExports, ${asyncDeps});\n`,
-	);
-
-	s.append(
-		`if (import.meta.useTla) await new Promise(${variablePrefix}_access);\n`,
 	);
 }
 
