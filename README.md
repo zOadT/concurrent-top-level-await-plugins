@@ -10,4 +10,4 @@ Note that the plugins require TLA support at runtime; they do _not_ provide a TL
 ## Plugins
 
 - [rollup-plugin-concurrent-top-level-await](./packages/rollup-plugin/README.md)
-- rolldown plugin (coming soon)
+- [rolldown-plugin-concurrent-top-level-await](./packages/rolldown-plugin/README.md)

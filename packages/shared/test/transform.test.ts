@@ -1,16 +1,17 @@
 import MagicString from "magic-string";
-import { parseAstAsync } from "rollup/parseAst";
+import { parseAstAsync as parseAstAsyncRollup } from "rollup/parseAst";
+import { parseAstAsync as parseAstAsyncRolldown } from "rolldown/parseAst";
 import { describe, expect, it } from "vitest";
 import { format } from "prettier";
 import transform from "../src/transform.js";
 
-async function runTransform(
+async function runRollupTransform(
 	code: string,
 	asyncFilter: (id: string) => boolean,
 	hasAwait: boolean,
 ) {
 	const s = new MagicString(code);
-	const ast = await parseAstAsync(code, {
+	const ast = await parseAstAsyncRollup(code, {
 		jsx: false,
 	});
 
@@ -26,7 +27,43 @@ async function runTransform(
 	});
 }
 
-describe("transform", () => {
+async function runRolldownTransform(
+	code: string,
+	asyncFilter: (id: string) => boolean,
+	hasAwait: boolean,
+) {
+	const s = new MagicString(code);
+	const ast = await parseAstAsyncRolldown(code, {
+		// preserveParens
+		// TODO filename
+		lang: "ts",
+	});
+
+	const importDeclarations = ast.body
+		.filter((a) => a.type === "ImportDeclaration")
+		.filter((a) => asyncFilter(a.source.value as string));
+
+	// @ts-expect-error TODO
+	transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
+
+	return format(s.toString(), {
+		parser: "babel-ts",
+		useTabs: true,
+	});
+}
+
+describe.each([
+	{
+		name: "rollup transform",
+		runTransform: runRollupTransform,
+		supportTypescript: false,
+	},
+	{
+		name: "rolldown transform",
+		runTransform: runRolldownTransform,
+		supportTypescript: true,
+	},
+])("$name", ({ runTransform, supportTypescript }) => {
 	describe("import declarations", () => {
 		const code = `
 			import a from './a';
