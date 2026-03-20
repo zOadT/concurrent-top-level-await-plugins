@@ -54,9 +54,6 @@
       "reason": "Uses Rolldown-specific APIs"
     }
   },
-  "dependencies": {
-    "@rolldown/pluginutils": "1.0.0-rc.9"
-  },
   "devDependencies": {
     "@types/estree": "^1.0.8",
     "prettier": "3.7.4",
