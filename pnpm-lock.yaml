@@ -31,9 +31,6 @@ importers:
 
   packages/rolldown-plugin:
     dependencies:
-      "@rolldown/pluginutils":
-        specifier: 1.0.0-rc.9
-        version: 1.0.0-rc.9
       vite:
         specifier: ^8.0.0
         version: 8.0.0(@types/node@25.2.3)
