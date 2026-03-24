@@ -55,6 +55,7 @@
     }
   },
   "devDependencies": {
+    "@oxc-project/types": "^0.122.0",
     "@types/estree": "^1.0.8",
     "prettier": "3.7.4",
     "rolldown": "1.0.0-rc.9"

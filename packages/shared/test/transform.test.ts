@@ -43,7 +43,6 @@ async function runRolldownTransform(
 		.filter((a) => a.type === "ImportDeclaration")
 		.filter((a) => asyncFilter(a.source.value as string));
 
-	// @ts-expect-error TODO
 	transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
 
 	return format(s.toString(), {

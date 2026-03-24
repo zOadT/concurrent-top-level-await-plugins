@@ -1,6 +1,4 @@
-// @ts-nocheck
-
-import type { ImportDeclaration } from "estree";
+import type { ImportDeclaration } from "@oxc-project/types";
 import {
 	RolldownMagicString,
 	type Plugin,
@@ -18,17 +16,18 @@ const supportedModuleTypes = new Set(["js", "jsx", "ts", "tsx"]);
 function resolveDeclarationSource(
 	context: TransformPluginContext,
 	id: string,
-	importerAttributes: Record<string, string> = {},
+	// importerAttributes: Record<string, string> = {},
 	declaration: ImportDeclaration,
 ) {
 	return context.resolve(declaration.source.value as string, id, {
-		attributes: Object.fromEntries(
-			declaration.attributes.map((attr) => [
-				attr.key.type === "Identifier" ? attr.key.name : attr.key.value,
-				attr.value.value,
-			]),
-		),
-		importerAttributes,
+		// TODO add support for attributes when rolldown supports it
+		// attributes: Object.fromEntries(
+		// 	declaration.attributes.map((attr) => [
+		// 		attr.key.type === "Identifier" ? attr.key.name : attr.key.value,
+		// 		attr.value.value,
+		// 	]),
+		// ),
+		// importerAttributes,
 		custom: {},
 	});
 }
@@ -96,7 +95,7 @@ export default function transformPlugin(options: {
 							const importId = await resolveDeclarationSource(
 								this,
 								id,
-								transformOptions?.attributes,
+								// transformOptions?.attributes,
 								declaration,
 							);
 							if (!importId /* TODO filter by id */) return null;
