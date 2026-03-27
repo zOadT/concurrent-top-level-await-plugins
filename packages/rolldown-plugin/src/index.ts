@@ -1,15 +1,9 @@
 import type { Plugin } from "rolldown";
 
+import { createFilter } from "./utils/filter.js";
 import awaitEntrypointsPlugin from "./awaitEntriesPlugin.js";
 import registerModulePlugin from "./registerModulePlugin.js";
 import transformPlugin from "./transformPlugin.js";
-
-function matchesPattern(id: string, pattern: RegExp | RegExp[]) {
-	if (Array.isArray(pattern)) {
-		return pattern.some((p) => p.test(id));
-	}
-	return pattern.test(id);
-}
 
 export default function concurrentTopLevelAwait(
 	options: {
@@ -25,26 +19,15 @@ export default function concurrentTopLevelAwait(
 		generatedVariablePrefix?: string;
 	} = {},
 ) {
-	const include = options.include;
-	const exclude = options.exclude ?? /\/node_modules\//;
 	const generatedVariablePrefix = options.generatedVariablePrefix ?? "__tla";
 	const enrichedOptions = {
 		...options,
 		generatedVariablePrefix,
 		registerModuleSource: `\0${generatedVariablePrefix}Register`,
-		filter: {
-			include,
-			exclude,
-		},
-		filterFn(id: string) {
-			if (exclude && matchesPattern(id, exclude)) {
-				return false;
-			}
-			if (include) {
-				return matchesPattern(id, include);
-			}
-			return true;
-		},
+		filter: createFilter(
+			options.include,
+			options.exclude ?? /\/node_modules\//,
+		),
 	};
 
 	return [
