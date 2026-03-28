@@ -1,4 +1,4 @@
-import type { Node } from "estree";
+import type { Node } from "./types/ast.js";
 
 function isFunctionNode(node: Node) {
 	return (

@@ -1,17 +1,16 @@
-import type MagicString from "magic-string";
-import { RollupAstNode } from "rollup";
+import type { MagicString } from "./types/magicString.js";
 import type {
 	Program,
 	ImportDeclaration,
 	Pattern,
 	VariableDeclaration,
 	MaybeNamedClassDeclaration,
-} from "estree";
+} from "./types/ast.js";
 import { visitScope } from "./ast.js";
 
 export default function transform(
 	s: MagicString,
-	ast: RollupAstNode<Program>,
+	ast: Program,
 	registerModuleSource: string,
 	asyncImports: ImportDeclaration[],
 	hasAwait: boolean,
@@ -44,7 +43,7 @@ export default function transform(
 
 function transformAndMoveDeclarationsToModuleScope(
 	s: MagicString,
-	ast: RollupAstNode<Program>,
+	ast: Program,
 	asyncImports: (ImportDeclaration | null)[],
 	variablePrefix: string,
 ) {
@@ -59,8 +58,9 @@ function transformAndMoveDeclarationsToModuleScope(
 		}
 
 		if (node.type === "ClassDeclaration") {
-			s.appendLeft(moduleScopeEnd, `let ${node.id.name};\n`);
-			s.appendRight(node.start, `${node.id.name} = `);
+			// declaration.id is not null because `default export class` case is handled later
+			s.appendLeft(moduleScopeEnd, `let ${node.id!.name};\n`);
+			s.appendRight(node.start, `${node.id!.name} = `);
 		}
 
 		// move variable declarations to module scope
@@ -76,13 +76,14 @@ function transformAndMoveDeclarationsToModuleScope(
 				);
 			} else if (node.declaration?.type === "ClassDeclaration") {
 				// export class ...
+				// declaration.id is not null because `default export class` case is handled later
 				s.appendLeft(
 					moduleScopeEnd,
-					`export let ${node.declaration.id.name};\n`,
+					`export let ${node.declaration.id!.name};\n`,
 				);
 				const declarationStart = getClassDeclarationStart(node.declaration);
 				s.remove(node.start, declarationStart);
-				s.appendRight(declarationStart, `${node.declaration.id.name} = `);
+				s.appendRight(declarationStart, `${node.declaration.id!.name} = `);
 			}
 		} else if (node.type === "VariableDeclaration") {
 			if (node.kind.endsWith("using")) {
