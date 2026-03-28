@@ -1,6 +1,6 @@
 {
   "name": "rolldown-plugin-concurrent-top-level-await",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Rolldown (and Vite) plugin enabling concurrent execution of modules that contain top level await.",
   "keywords": [
     "rolldown-plugin",

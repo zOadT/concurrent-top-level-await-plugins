@@ -1,5 +1,11 @@
 # rolldown-plugin-concurrent-top-level-await
 
+## 0.1.0
+
+### Minor Changes
+
+- [#42](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/42) [`1a42420`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/1a42420a674ebe93560b02dbc79a940d2c71dbbe) Thanks [@zOadT](https://github.com/zOadT)! - add filter options and exclude node_modules by default
+
 ## 0.0.3
 
 ### Patch Changes
