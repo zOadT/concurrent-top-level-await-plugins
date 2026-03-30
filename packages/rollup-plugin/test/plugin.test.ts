@@ -61,8 +61,47 @@ describe("rollup-plugin", () => {
 		expect(traces).toEqual([
 			"a before",
 			"b before",
+			"c before",
+			"d before",
 			"a after",
 			"b after",
+			"ab before",
+			"c after",
+			"d after",
+			"cd before",
+			"ab after",
+			"cd after",
+			"index before",
+			"index after",
+		]);
+	});
+
+	it("import from exclude test", async () => {
+		const bundle = await rollup({
+			input: path.join(__dirname, "examples", "basic", "index.js"),
+			plugins: [
+				concurrentTopLevelAwait({
+					include: "**/*.js",
+					exclude: "**/index.js",
+				}),
+			],
+		});
+
+		const { traces } = await runBundle(bundle);
+
+		expect(traces).toEqual([
+			"a before",
+			"b before",
+			"a after",
+			"b after",
+			"ab before",
+			"ab after",
+			"c before",
+			"d before",
+			"c after",
+			"d after",
+			"cd before",
+			"cd after",
 			"index before",
 			"index after",
 		]);

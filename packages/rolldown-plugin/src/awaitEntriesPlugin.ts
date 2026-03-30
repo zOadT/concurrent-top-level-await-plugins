@@ -36,19 +36,22 @@ export default function awaitEntrypointsPlugin(options: {
 					return resolved;
 				}
 
-				if (!extraOptions.isEntry && extraOptions.kind !== "dynamic-import") {
-					return;
+				if (
+					extraOptions.isEntry ||
+					extraOptions.kind === "dynamic-import" ||
+					// TODO importer == null case
+					(importer != null && !options.filter.includes(importer))
+				) {
+					const resolved = await this.resolve(source, importer, extraOptions);
+
+					// TODO skip "\0" modules?
+					if (resolved == null || !options.filter.includes(resolved.id)) return;
+
+					const key = randomUUID();
+					awaitedEntriesMap.set(key, resolved);
+
+					return `${proxyPrefix}${key}`;
 				}
-
-				const resolved = await this.resolve(source, importer, extraOptions);
-
-				// TODO skip "\0" modules?
-				if (resolved == null || !options.filter.includes(resolved.id)) return;
-
-				const key = randomUUID();
-				awaitedEntriesMap.set(key, resolved);
-
-				return `${proxyPrefix}${key}`;
 			},
 		},
 		load: {
