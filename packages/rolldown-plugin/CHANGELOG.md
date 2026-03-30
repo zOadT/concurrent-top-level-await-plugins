@@ -1,5 +1,17 @@
 # rolldown-plugin-concurrent-top-level-await
 
+## 0.2.0
+
+### Minor Changes
+
+- [#44](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/44) [`9fb4285`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/9fb4285b7c0fa97679e0b319fd877a5382ba8605) Thanks [@zOadT](https://github.com/zOadT)! - fix vite compatibility:
+  - exclude `.html` files by default
+  - do not require `experimental.nativeMagicString` to be enabled, since it can't be enabled in vite
+
+### Patch Changes
+
+- [#44](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/44) [`0119448`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/01194480edb1a63e372e1276c834586b7caac5e8) Thanks [@zOadT](https://github.com/zOadT)! - fix imports from excluded modules were not being awaited
+
 ## 0.1.0
 
 ### Minor Changes
