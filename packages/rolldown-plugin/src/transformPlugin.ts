@@ -14,6 +14,8 @@ import transform from "../../shared/src/transform.js";
 // TODO correct values?
 const supportedModuleTypes = new Set(["js", "jsx", "ts", "tsx"]);
 
+let nativeMagicStringWarned = false;
+
 function resolveDeclarationSource(
 	context: TransformPluginContext,
 	id: string,
@@ -137,12 +139,13 @@ export default function transformPlugin(options: {
 				const { magicString: _magicString } = transformOptions;
 				const magicString = new RolldownMagicString(code);
 
-				// we require experimental.nativeMagicString to be enabled because we
-				// will use it as soon as we support typescript in transform directly
-				if (!_magicString) {
-					throw new Error(
-						"experimental.nativeMagicString must be enabled in the Rolldown options to use the concurrent-tla plugin",
+				// NOTE: `build.rolldownOptions.experimental.nativeMagicString = true`
+				// does not work for vite...
+				if (!_magicString && !nativeMagicStringWarned) {
+					this.warn(
+						"Enable experimental.nativeMagicString for source maps support",
 					);
+					nativeMagicStringWarned = true;
 				}
 
 				transform(
@@ -155,7 +158,7 @@ export default function transformPlugin(options: {
 				);
 
 				return {
-					code: magicString,
+					code: _magicString != null ? magicString : magicString.toString(),
 					// TODO use asyncTracker instead?
 					meta: {
 						[generatedVariablePrefix + "_async"]: true,

@@ -26,7 +26,8 @@ export default function concurrentTopLevelAwait(
 		registerModuleSource: `\0${generatedVariablePrefix}Register`,
 		filter: createFilter(
 			options.include,
-			options.exclude ?? /\/node_modules\//,
+			// TODO .htm and query parameters?
+			options.exclude ?? [/\/node_modules\//, /\.html$/],
 		),
 	};
 
