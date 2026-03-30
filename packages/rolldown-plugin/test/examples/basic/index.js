@@ -1,5 +1,5 @@
-import "./a";
-import "./b";
+import "./ab.js";
+import "./cd.js";
 
 trace("index before");
 
