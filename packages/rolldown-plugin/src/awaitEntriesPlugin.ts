@@ -66,15 +66,26 @@ export default function awaitEntrypointsPlugin(options: {
 					}
 					const module = await this.load(resolved);
 
+					let code = "";
+
+					// await module execution if it is async
 					if (module.meta[generatedVariablePrefix + "_async"]) {
-						return `import { ${generatedVariablePrefix}_access } from "${resolved.id}";
+						code += `import { ${generatedVariablePrefix}_access } from "${resolved.id}";
 await new Promise(${generatedVariablePrefix}_access);
-export * from "${resolved.id}";
 `;
 					}
-					// note that the source here is actually irrelevant
-					return `export * from "${resolved.id}";
+
+					// re-export default export if exists
+					if (module.exports.includes("default")) {
+						code += `import ${generatedVariablePrefix}_default from "${resolved.id}";
+export default ${generatedVariablePrefix}_default;
 `;
+					}
+
+					// re-export named exports
+					code += `export * from "${resolved.id}";\n`;
+
+					return code;
 				}
 			},
 		},

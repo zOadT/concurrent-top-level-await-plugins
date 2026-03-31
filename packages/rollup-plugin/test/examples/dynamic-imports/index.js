@@ -1,5 +1,8 @@
 trace("index before");
 
-await import("./a.js");
+const imports = await import("./a.js");
+
+trace(imports.default);
+trace(imports.b);
 
 trace("index after");
