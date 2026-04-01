@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.3.2
+
+### Patch Changes
+
+- [#49](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/49) [`57446e3`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/57446e31a3772347a1bf9367af2f69e8d350ad75) Thanks [@fkrauthan](https://github.com/fkrauthan)! - Fixed undefined access within `getClassDeclarationStart` in some instances
+
 ## 0.3.1
 
 ### Patch Changes

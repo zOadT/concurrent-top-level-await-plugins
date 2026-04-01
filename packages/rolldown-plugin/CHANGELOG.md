@@ -1,5 +1,11 @@
 # rolldown-plugin-concurrent-top-level-await
 
+## 0.2.1
+
+### Patch Changes
+
+- [#46](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/46) [`a950854`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/a95085415262d2dbddd576300334f5a833c25888) Thanks [@zOadT](https://github.com/zOadT)! - fix default export for dynamically imported modules
+
 ## 0.2.0
 
 ### Minor Changes
