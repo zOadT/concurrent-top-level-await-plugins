@@ -174,6 +174,8 @@ describe("rolldown-plugin", () => {
 				"b in between",
 				"b after",
 				"a after",
+				"a",
+				"b",
 				"index after",
 			]);
 		});
