@@ -163,7 +163,11 @@ function isFunctionDeclaration(type?: string): type is "FunctionDeclaration" {
 }
 
 function getClassDeclarationStart(node: MaybeNamedClassDeclaration) {
-	return node.decorators?.[0]?.start ?? node.start;
+	if (!("decorators" in node)) {
+		// older rollup versions don't support decorators
+		return node.start;
+	}
+	return node.decorators[0]?.start ?? node.start;
 }
 
 function moveVariableDeclarationToModuleScope(
