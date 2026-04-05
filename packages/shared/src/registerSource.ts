@@ -11,4 +11,8 @@ export default transformSync(
 			: "../shared/src/assets/register.ts",
 		"utf-8",
 	),
+	{
+		// fix to first version with top-level-await support
+		target: "es2022",
+	},
 ).code;
