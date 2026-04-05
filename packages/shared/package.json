@@ -24,8 +24,10 @@
   "devDependencies": {
     "@oxc-project/types": "^0.122.0",
     "@types/estree": "^1.0.8",
+    "@types/estree_rollup4_9": "npm:@types/estree@1.0.5",
     "magic-string": "^0.30.21",
     "rolldown": "1.0.0-rc.9",
-    "rollup": "^4.57.1"
+    "rollup": "^4.57.1",
+    "rollup4_0": "npm:rollup@4.0.0"
   }
 }

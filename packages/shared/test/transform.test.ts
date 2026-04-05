@@ -1,31 +1,36 @@
 import MagicString from "magic-string";
 import { parseAstAsync as parseAstAsyncRollup } from "rollup/parseAst";
+import { parseAst as parseAstAsyncRollup4_0 } from "rollup4_0/parseAst";
 import { parseAstAsync as parseAstAsyncRolldown } from "rolldown/parseAst";
 import { describe, expect, it } from "vitest";
 import { format } from "prettier";
 import transform from "../src/transform.js";
+import { ProgramNode } from "rollup";
 
-async function runRollupTransform(
-	code: string,
-	asyncFilter: (id: string) => boolean,
-	hasAwait: boolean,
-) {
-	const s = new MagicString(code);
-	const ast = await parseAstAsyncRollup(code, {
-		jsx: false,
-	});
+const runRollupTransform = (
+	parseAstAsync: typeof parseAstAsyncRollup | typeof parseAstAsyncRollup4_0,
+) =>
+	async function (
+		code: string,
+		asyncFilter: (id: string) => boolean,
+		hasAwait: boolean,
+	) {
+		const s = new MagicString(code);
+		const ast = (await parseAstAsync(code, {
+			jsx: false,
+		})) as ProgramNode;
 
-	const importDeclarations = ast.body
-		.filter((a) => a.type === "ImportDeclaration")
-		.filter((a) => asyncFilter(a.source.value as string));
+		const importDeclarations = ast.body
+			.filter((a) => a.type === "ImportDeclaration")
+			.filter((a) => asyncFilter(a.source.value as string));
 
-	transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
+		transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
 
-	return format(s.toString(), {
-		parser: "babel",
-		useTabs: true,
-	});
-}
+		return format(s.toString(), {
+			parser: "babel",
+			useTabs: true,
+		});
+	};
 
 async function runRolldownTransform(
 	code: string,
@@ -54,15 +59,23 @@ async function runRolldownTransform(
 describe.each([
 	{
 		name: "rollup transform",
-		runTransform: runRollupTransform,
+		runTransform: runRollupTransform(parseAstAsyncRollup),
+		supportDecorators: true,
+		supportTypescript: false,
+	},
+	{
+		name: "rollup 4.0 transform",
+		runTransform: runRollupTransform(parseAstAsyncRollup4_0),
+		supportDecorators: false,
 		supportTypescript: false,
 	},
 	{
 		name: "rolldown transform",
 		runTransform: runRolldownTransform,
+		supportDecorators: true,
 		supportTypescript: true,
 	},
-])("$name", ({ runTransform, supportTypescript }) => {
+])("$name", ({ runTransform, supportDecorators, supportTypescript }) => {
 	describe("import declarations", () => {
 		const code = `
 			import a from './a';
@@ -232,7 +245,7 @@ describe.each([
 			`);
 		});
 
-		it("handles decorated classes", async () => {
+		it.skipIf(!supportDecorators)("handles decorated classes", async () => {
 			const code = `
 				console.log("A");
 				@decorator
@@ -263,7 +276,7 @@ describe.each([
 			`);
 		});
 
-		it("handles multiple decorators", async () => {
+		it.skipIf(!supportDecorators)("handles multiple decorators", async () => {
 			const code = `
 				console.log("A");
 				@decorator1 @decorator2 class A {
@@ -342,7 +355,7 @@ describe.each([
 			});
 		});
 
-		describe("class declaration exports", () => {
+		describe.skipIf(!supportDecorators)("class declaration exports", () => {
 			describe("handles default exports", () => {
 				it("without name", async () => {
 					const code = `
@@ -927,7 +940,7 @@ describe.each([
 			});
 		});
 
-		describe("with using declaration", () => {
+		describe.skipIf(!supportDecorators)("with using declaration", () => {
 			it("handles using declaration", async () => {
 				const code = `
 					using resourceA = getResourceA(), resourceB = getResourceB();
