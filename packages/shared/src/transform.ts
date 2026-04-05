@@ -29,7 +29,7 @@ export default function transform(
 	);
 	s.append("\n}\n");
 
-	s.prepend(
+	s.append(
 		`import ${variablePrefix}_register from ${JSON.stringify(registerModuleSource)};\n`,
 	);
 
