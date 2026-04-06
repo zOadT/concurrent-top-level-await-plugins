@@ -988,4 +988,34 @@ describe.each([
 			});
 		});
 	});
+
+	describe("directives", () => {
+		it("handles directives", async () => {
+			const code = `
+				// some comment
+				"use strict";
+				"use something else";
+
+				// some other comment
+				console.log('A');
+
+				"use notadirective";
+			`;
+
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+					"// some comment
+					"use strict";
+					"use something else";
+					async function __tla_initModuleExports() {
+						// some other comment
+						console.log("A");
+
+						("use notadirective");
+					}
+					import __tla_register from "\\u0000__tlaRegister";
+					export const __tla_access = __tla_register(__tla_initModuleExports, []);
+					"
+				`);
+		});
+	});
 });
