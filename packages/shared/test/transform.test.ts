@@ -87,8 +87,7 @@ describe.each([
 
 		it("adds import for __tla_access", async () => {
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				import a from "./a";
+				"import a from "./a";
 				import { __tla_access as __tla0 } from "./a";
 				import { b } from "./b";
 				import { __tla_access as __tla1 } from "./b";
@@ -97,6 +96,7 @@ describe.each([
 				async function __tla_initModuleExports() {
 					console.log(a, b, c);
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, [
 					() => __tla0,
 					() => __tla1,
@@ -109,8 +109,7 @@ describe.each([
 		it("only applies logic to async modules", async () => {
 			expect(await runTransform(code, (id) => id != "./b", true))
 				.toMatchInlineSnapshot(`
-					"import __tla_register from "\\u0000__tlaRegister";
-					import a from "./a";
+					"import a from "./a";
 					import { __tla_access as __tla0 } from "./a";
 					import { b } from "./b";
 					import * as c from "./c";
@@ -118,6 +117,7 @@ describe.each([
 					async function __tla_initModuleExports() {
 						console.log(a, b, c);
 					}
+					import __tla_register from "\\u0000__tlaRegister";
 					export const __tla_access = __tla_register(__tla_initModuleExports, [
 						() => __tla0,
 						() => __tla1,
@@ -129,13 +129,13 @@ describe.each([
 		it("handles no async modules", async () => {
 			expect(await runTransform(code, () => false, true))
 				.toMatchInlineSnapshot(`
-					"import __tla_register from "\\u0000__tlaRegister";
-					import a from "./a";
+					"import a from "./a";
 					import { b } from "./b";
 					import * as c from "./c";
 					async function __tla_initModuleExports() {
 						console.log(a, b, c);
 					}
+					import __tla_register from "\\u0000__tlaRegister";
 					export const __tla_access = __tla_register(__tla_initModuleExports, []);
 					"
 				`);
@@ -151,12 +151,12 @@ describe.each([
 			`;
 			expect(await runTransform(code, () => true, false))
 				.toMatchInlineSnapshot(`
-					"import __tla_register from "\\u0000__tlaRegister";
-					import a from "./a";
+					"import a from "./a";
 					import { __tla_access as __tla0 } from "./a";
 					function __tla_initModuleExports() {
 						console.log(a);
 					}
+					import __tla_register from "\\u0000__tlaRegister";
 					export const __tla_access = __tla_register(__tla_initModuleExports, [
 						() => __tla0,
 					]);
@@ -175,14 +175,14 @@ describe.each([
 				console.log('B');`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				function a() {
+				"function a() {
 					return 123;
 				}
 				async function __tla_initModuleExports() {
 					console.log("A");
 					console.log("B");
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
 				"
 			`);
@@ -200,8 +200,7 @@ describe.each([
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				let a;
+				"let a;
 				function b() {
 					return 123;
 				}
@@ -211,6 +210,7 @@ describe.each([
 					};
 					123;
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
 				"
 			`);
@@ -229,8 +229,7 @@ describe.each([
 				console.log("B");
 			`;
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				let A;
+				"let A;
 				async function __tla_initModuleExports() {
 					console.log("A");
 					A = class A {
@@ -240,6 +239,7 @@ describe.each([
 					};
 					console.log("B");
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
 				"
 			`);
@@ -258,8 +258,7 @@ describe.each([
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				let A;
+				"let A;
 				async function __tla_initModuleExports() {
 					console.log("A");
 					A =
@@ -271,6 +270,7 @@ describe.each([
 						};
 					console.log("B");
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
 				"
 			`);
@@ -288,8 +288,7 @@ describe.each([
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				let A;
+				"let A;
 				async function __tla_initModuleExports() {
 					console.log("A");
 					A =
@@ -302,6 +301,7 @@ describe.each([
 						};
 					console.log("B");
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
 				"
 			`);
@@ -320,13 +320,13 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						export default function a() {
+						"export default function a() {
 							return 123;
 						}
 						async function __tla_initModuleExports() {
 							console.log("A");
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -342,13 +342,13 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						export function a() {
+						"export function a() {
 							return 123;
 						}
 						async function __tla_initModuleExports() {
 							console.log("A");
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -369,8 +369,7 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							let __tla_default;
+							"let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								__tla_default =
@@ -382,6 +381,7 @@ describe.each([
 									};
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -399,8 +399,7 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							let A;
+							"let A;
 							export { A as default };
 							async function __tla_initModuleExports() {
 								A =
@@ -412,6 +411,7 @@ describe.each([
 									};
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -431,8 +431,7 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export let A;
+							"export let A;
 							async function __tla_initModuleExports() {
 								A = class A {
 									method() {
@@ -441,6 +440,7 @@ describe.each([
 								};
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -458,8 +458,7 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export let A;
+							"export let A;
 							async function __tla_initModuleExports() {
 								A =
 									@decorator
@@ -470,6 +469,7 @@ describe.each([
 									};
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -486,12 +486,12 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							let __tla_default;
+							"let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								__tla_default = "a";
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -504,12 +504,12 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							let __tla_default;
+							"let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								__tla_default = await "a";
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -523,14 +523,14 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							let a;
+							"let a;
 							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								a = await 1;
 								__tla_default = a;
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -544,14 +544,14 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							let a, b;
+							"let a, b;
 							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								(a, b);
 								__tla_default = { a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } };
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -565,14 +565,14 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							let a, b, c;
+							"let a, b, c;
 							let __tla_default;
 							export { __tla_default as default };
 							async function __tla_initModuleExports() {
 								(a, b, c);
 								__tla_default = [a, [b, c]] = [1, [2, 3]];
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -588,12 +588,12 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export let a, b;
+							"export let a, b;
 							async function __tla_initModuleExports() {
 								((a = 1), (b = 2));
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -607,12 +607,12 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export let a, b;
+							"export let a, b;
 							async function __tla_initModuleExports() {
 								((a = 1), (b = 2));
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -626,12 +626,12 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export var a, b;
+							"export var a, b;
 							async function __tla_initModuleExports() {
 								((a = 1), (b = 2));
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -646,14 +646,14 @@ describe.each([
 
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export let a, b;
+							"export let a, b;
 							export let x, y, z;
 							async function __tla_initModuleExports() {
 								({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
 								[x, [y, z]] = [1, [2, 3]];
 								console.log("A");
 							}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -667,9 +667,9 @@ describe.each([
 					`;
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export { a, b as c };
+							"export { a, b as c };
 							async function __tla_initModuleExports() {}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -681,9 +681,9 @@ describe.each([
 					`;
 					expect(await runTransform(code, () => true, true))
 						.toMatchInlineSnapshot(`
-							"import __tla_register from "\\u0000__tlaRegister";
-							export { foo, default as def } from "./mod";
+							"export { foo, default as def } from "./mod";
 							async function __tla_initModuleExports() {}
+							import __tla_register from "\\u0000__tlaRegister";
 							export const __tla_access = __tla_register(__tla_initModuleExports, []);
 							"
 						`);
@@ -700,11 +700,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						export * from "module";
+						"export * from "module";
 						async function __tla_initModuleExports() {
 							console.log("A");
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -718,11 +718,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						export * as ident from "module";
+						"export * as ident from "module";
 						async function __tla_initModuleExports() {
 							console.log("A");
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -737,11 +737,11 @@ describe.each([
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				let a, b;
+				"let a, b;
 				async function __tla_initModuleExports() {
 					((a = 1), (b = 2));
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
 				"
 			`);
@@ -757,13 +757,13 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						var a, b;
+						"var a, b;
 						async function __tla_initModuleExports() {
 							try {
 								((a = 1), (b = 2));
 							} catch (e) {}
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -778,13 +778,13 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						async function __tla_initModuleExports() {
+						"async function __tla_initModuleExports() {
 							try {
 								let a = 1,
 									b = 2;
 							} catch (e) {}
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -801,8 +801,7 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						async function __tla_initModuleExports() {
+						"async function __tla_initModuleExports() {
 							try {
 								function test() {
 									var a = 1,
@@ -810,6 +809,7 @@ describe.each([
 								}
 							} catch (e) {}
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -823,12 +823,12 @@ describe.each([
 			`;
 
 			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
-				"import __tla_register from "\\u0000__tlaRegister";
-				var a, b;
+				"var a, b;
 				async function __tla_initModuleExports() {
 					dontCallMe;
 					((a = 1), (b = 2));
 				}
+				import __tla_register from "\\u0000__tlaRegister";
 				export const __tla_access = __tla_register(__tla_initModuleExports, []);
 				"
 			`);
@@ -842,11 +842,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let a, b;
+						"let a, b;
 						async function __tla_initModuleExports() {
 							({ a, c: b = 3 } = { a: 1, c: 2 });
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -859,11 +859,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let a, b;
+						"let a, b;
 						async function __tla_initModuleExports() {
 							({ a, c: { d: b = 3 } = {} } = { a: 1, c: { d: 2 } });
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -876,11 +876,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let a, b;
+						"let a, b;
 						async function __tla_initModuleExports() {
 							({ a, ...b } = { a: 1, c: 2, d: 3 });
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -895,11 +895,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let a, b;
+						"let a, b;
 						async function __tla_initModuleExports() {
 							[a, b = 3] = [1, 2];
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -912,11 +912,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let a, b, c;
+						"let a, b, c;
 						async function __tla_initModuleExports() {
 							[a, [b, c]] = [1, [2, 3]];
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -929,11 +929,11 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let a, b;
+						"let a, b;
 						async function __tla_initModuleExports() {
 							[a, ...b] = [1, 2, 3];
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -949,8 +949,7 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let resourceA;
+						"let resourceA;
 						let resourceB;
 						async function __tla_initModuleExports() {
 							using __tla_using_resourceA = getResourceA(),
@@ -959,6 +958,7 @@ describe.each([
 							resourceB = __tla_using_resourceB;
 							console.log(resourceA);
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
@@ -972,8 +972,7 @@ describe.each([
 
 				expect(await runTransform(code, () => true, true))
 					.toMatchInlineSnapshot(`
-						"import __tla_register from "\\u0000__tlaRegister";
-						let resourceA;
+						"let resourceA;
 						let resourceB;
 						async function __tla_initModuleExports() {
 							await using __tla_using_resourceA = getResourceA(),
@@ -982,10 +981,41 @@ describe.each([
 							resourceB = __tla_using_resourceB;
 							console.log(resourceA);
 						}
+						import __tla_register from "\\u0000__tlaRegister";
 						export const __tla_access = __tla_register(__tla_initModuleExports, []);
 						"
 					`);
 			});
+		});
+	});
+
+	describe("directives", () => {
+		it("handles directives", async () => {
+			const code = `
+				// some comment
+				"use strict";
+				"use something else";
+
+				// some other comment
+				console.log('A');
+
+				"use notadirective";
+			`;
+
+			expect(await runTransform(code, () => true, true)).toMatchInlineSnapshot(`
+					"// some comment
+					"use strict";
+					"use something else";
+					async function __tla_initModuleExports() {
+						// some other comment
+						console.log("A");
+
+						("use notadirective");
+					}
+					import __tla_register from "\\u0000__tlaRegister";
+					export const __tla_access = __tla_register(__tla_initModuleExports, []);
+					"
+				`);
 		});
 	});
 });

@@ -29,7 +29,7 @@ export default function transform(
 	);
 	s.append("\n}\n");
 
-	s.prepend(
+	s.append(
 		`import ${variablePrefix}_register from ${JSON.stringify(registerModuleSource)};\n`,
 	);
 
@@ -48,13 +48,24 @@ function transformAndMoveDeclarationsToModuleScope(
 	variablePrefix: string,
 ) {
 	let moduleScopeEnd = 0;
-	let i = 0;
+	let importDeclarationIndex = 0;
+	let inDirectivePrologue = true;
 	for (const node of ast.body) {
+		if (
+			inDirectivePrologue &&
+			node.type === "ExpressionStatement" &&
+			node.expression.type === "Literal"
+		) {
+			moduleScopeEnd = node.end;
+			continue;
+		}
+		inDirectivePrologue = false;
+
 		// add __tla import
 		if (asyncImports.includes(node as ImportDeclaration)) {
-			const tlaImport = `\nimport { ${variablePrefix}_access as ${variablePrefix}${i}} from '${(node as ImportDeclaration).source.value}';`;
+			const tlaImport = `\nimport { ${variablePrefix}_access as ${variablePrefix}${importDeclarationIndex}} from '${(node as ImportDeclaration).source.value}';`;
 			s.appendLeft(node.end, tlaImport);
-			i++;
+			importDeclarationIndex++;
 		}
 
 		if (node.type === "ClassDeclaration") {
