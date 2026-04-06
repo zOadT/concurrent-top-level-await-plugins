@@ -1,5 +1,11 @@
 # rolldown-plugin-concurrent-top-level-await
 
+## 0.3.0
+
+### Minor Changes
+
+- [#51](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/51) [`675ada8`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/675ada8c60f8c26722bc65314ddc7cca72756baf) Thanks [@zOadT](https://github.com/zOadT)! - add support for javascript directives
+
 ## 0.2.1
 
 ### Patch Changes
