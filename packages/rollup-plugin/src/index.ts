@@ -96,7 +96,9 @@ export default function concurrentTopLevelAwait(
 								transformOptions?.attributes,
 								declaration,
 							);
-							if (!importId || !filter(importId.id)) return null;
+							if (!importId || importId.external || !filter(importId.id)) {
+								return null;
+							}
 							return {
 								declaration,
 								id: importId.id,

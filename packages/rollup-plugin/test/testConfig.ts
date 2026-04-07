@@ -77,6 +77,7 @@ export const rollupPluginTestConfig: PluginTestConfig<RollupBuild> = {
 
 		const bundle = await rollup({
 			input: options.input,
+			external: options.external,
 			plugins: [
 				options.trackResolveCalls
 					? attributesSpyPlugin(pluginCalls, bundlerCalls)

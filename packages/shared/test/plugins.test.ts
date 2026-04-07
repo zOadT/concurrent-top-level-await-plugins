@@ -20,6 +20,7 @@ export type PluginTestConfig<T> = {
 		input: string;
 		include?: RegExp;
 		exclude?: RegExp;
+		external?: RegExp;
 		trackResolveCalls?: boolean;
 	}) => Promise<{
 		bundle: T;
@@ -223,6 +224,37 @@ describe.each<PluginTestConfig<any>>([
 					);
 				},
 			);
+		});
+
+		describe("external modules", () => {
+			it("correctly handles unresolved modules", async () => {
+				const { bundle } = await createBundle({
+					input: path.join(
+						__dirname,
+						"examples",
+						"external-module",
+						"index.js",
+					),
+					include: /\.js$/,
+				});
+
+				await runBundle(bundle);
+			});
+
+			it("correctly handles external modules", async () => {
+				const { bundle } = await createBundle({
+					input: path.join(
+						__dirname,
+						"examples",
+						"external-module",
+						"index.js",
+					),
+					include: /\.js$/,
+					external: /external/,
+				});
+
+				await runBundle(bundle);
+			});
 		});
 
 		it("correctly handles sync siblings", async () => {

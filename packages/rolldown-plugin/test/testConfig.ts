@@ -85,6 +85,7 @@ export const rolldownPluginTestConfig: PluginTestConfig<RolldownBuild> = {
 		const bundle = await rolldown({
 			experimental: { nativeMagicString: true },
 			input: options.input,
+			external: options.external,
 			plugins: [
 				options.trackResolveCalls
 					? attributesSpyPlugin(pluginCalls, bundlerCalls)
