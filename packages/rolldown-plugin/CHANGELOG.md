@@ -1,5 +1,11 @@
 # rolldown-plugin-concurrent-top-level-await
 
+## 0.3.1
+
+### Patch Changes
+
+- [#53](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/53) [`ad11b87`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/ad11b879204b6a2b0793490a72c1c6286086c041) Thanks [@zOadT](https://github.com/zOadT)! - correctly handle external modules
+
 ## 0.3.0
 
 ### Minor Changes
