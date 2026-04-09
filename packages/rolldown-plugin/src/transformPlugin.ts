@@ -104,7 +104,11 @@ export default function transformPlugin(options: {
 								// transformOptions?.attributes,
 								declaration,
 							);
-							if (!importId || !options.filter.includes(importId.id)) {
+							if (
+								!importId ||
+								importId.external ||
+								!options.filter.includes(importId.id)
+							) {
 								return null;
 							}
 							return {
