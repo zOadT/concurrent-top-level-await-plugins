@@ -1,5 +1,5 @@
 > [!Warning]
-> This plugin uses Rollup-specific APIs and is therefore not compatible with Rolldown or Vite >= 8. For more information, see [this issue](https://github.com/zOadT/concurrent-top-level-await-plugins/issues/35).
+> This plugin uses Rollup-specific APIs and is therefore not compatible with Rolldown or Vite >= 8. For Rolldown compatibility use [rolldown-plugin-concurrent-top-level-await](https://www.npmjs.com/package/rolldown-plugin-concurrent-top-level-await).
 
 # rollup-plugin-concurrent-top-level-await
 
