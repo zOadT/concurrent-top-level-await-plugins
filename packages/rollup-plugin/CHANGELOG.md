@@ -1,5 +1,11 @@
 # rollup-plugin-concurrent-top-level-await
 
+## 0.4.2
+
+### Patch Changes
+
+- [#57](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/57) [`5b0e333`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/5b0e33328530ebbd43c2459430d1de8661b07637) Thanks [@zOadT](https://github.com/zOadT)! - prerender mermaid diagrams in README.md for npmjs.com
+
 ## 0.4.1
 
 ### Patch Changes
