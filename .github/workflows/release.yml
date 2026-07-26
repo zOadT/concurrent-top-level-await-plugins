@@ -41,10 +41,6 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      # https://pptr.dev/troubleshooting#issues-with-apparmor-on-ubuntu
-      - name: Disable AppArmor for Puppeteer
-        run: echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
-
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
