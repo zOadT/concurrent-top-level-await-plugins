@@ -23,8 +23,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown --dts",
-    "prepublishOnly": "mmdc -i README.md -o README.md -a images -b transparent"
+    "build": "tsdown --dts"
   },
   "repository": {
     "type": "git",
@@ -60,7 +59,6 @@
     "magic-string": "^0.30.21"
   },
   "devDependencies": {
-    "@mermaid-js/mermaid-cli": "^11.16.0",
     "@types/estree": "^1.0.8",
     "prettier": "3.7.4",
     "rollup": "^4.57.1",
