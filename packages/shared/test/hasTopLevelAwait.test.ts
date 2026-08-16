@@ -1,5 +1,5 @@
 import { parseAstAsync } from "rollup/parseAst";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import hasTopLevelAwait from "../src/hasTopLevelAwait.js";
 
 async function runHasTopLevelAwait(code: string) {
