@@ -63,21 +63,18 @@ describe.each([
 		name: "rollup transform",
 		runTransform: runRollupTransform(parseAstAsyncRollup),
 		supportDecorators: true,
-		supportTypescript: false,
 	},
 	{
 		name: "rollup 4.0 transform",
 		runTransform: runRollupTransform(parseAstAsyncRollup4_0),
 		supportDecorators: false,
-		supportTypescript: false,
 	},
 	{
 		name: "rolldown transform",
 		runTransform: runRolldownTransform,
 		supportDecorators: true,
-		supportTypescript: true,
 	},
-])("$name", ({ runTransform, supportDecorators, supportTypescript }) => {
+])("$name", ({ runTransform, supportDecorators }) => {
 	describe("import declarations", () => {
 		const code = `
 			import a from './a';

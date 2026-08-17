@@ -32,8 +32,8 @@ async function runBundle(bundle: RollupBuild, cooldown = 0) {
 			path.join(__dirname, "dist", uuid, output[0].fileName)
 		);
 	} catch (err) {
-		traces.push(`Caught error: ${err}`);
 		error = err as string;
+		traces.push(`Caught error: ${error}`);
 	}
 
 	await new Promise((resolve) => setTimeout(resolve, cooldown));
