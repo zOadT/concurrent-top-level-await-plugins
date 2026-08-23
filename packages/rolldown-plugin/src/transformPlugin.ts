@@ -129,8 +129,19 @@ export default function transformPlugin(options: {
 				const asyncImports = (
 					await Promise.all(
 						imports.map(async ({ declaration, id }) => {
+							const unblock = () => {
+								asyncTracker.setEntryAsync(id, false);
+								asyncTracker.setDependencies(id, []);
+							};
 							// don't await load to not run into deadlock
-							this.load({ id });
+							this.load({ id })
+								.then((moduleInfo) => {
+									// If the module cannot be loaded, its transform hook never runs, so
+									// the await below would hang forever. Rolldown fulfills `load` for
+									// unloadable modules and signals the failure with a null `code`.
+									if (moduleInfo?.code == null) unblock();
+								})
+								.catch(unblock);
 							if (!(await asyncTracker.isAsync(id))) return null;
 							return declaration;
 						}),

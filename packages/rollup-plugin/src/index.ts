@@ -118,7 +118,12 @@ export default function concurrentTopLevelAwait(
 					await Promise.all(
 						imports.map(async ({ declaration, id }) => {
 							// don't await load to not run into deadlock
-							this.load({ id });
+							this.load({ id }).catch(() => {
+								// If the module cannot be loaded, its transform hook never runs, so
+								// the await below would hang forever.
+								asyncTracker.setEntryAsync(id, false);
+								asyncTracker.setDependencies(id, []);
+							});
 							if (!(await asyncTracker.isAsync(id))) return null;
 							return declaration;
 						}),
