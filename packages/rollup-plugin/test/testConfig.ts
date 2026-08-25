@@ -19,33 +19,35 @@ async function runBundle(bundle: RollupBuild, cooldown = 0) {
 	};
 	process.on("trace", onTrace);
 
-	const { output } = await bundle.write({
-		dir: path.join(__dirname, "dist", uuid),
-		intro: `function trace(message) {
+	try {
+		const { output } = await bundle.write({
+			dir: path.join(__dirname, "dist", uuid),
+			intro: `function trace(message) {
     process.emit("trace", { message, uuid: "${uuid}" });
 }`,
-	});
+		});
 
-	let exports, error: string | undefined;
-	try {
-		exports = await import(
-			path.join(__dirname, "dist", uuid, output[0].fileName)
-		);
-	} catch (err) {
-		traces.push(`Caught error: ${err}`);
-		error = err as string;
+		let exports, error: string | undefined;
+		try {
+			exports = await import(
+				path.join(__dirname, "dist", uuid, output[0].fileName)
+			);
+		} catch (err) {
+			error = err as string;
+			traces.push(`Caught error: ${error}`);
+		}
+
+		await new Promise((resolve) => setTimeout(resolve, cooldown));
+
+		await fs.rm(path.join(__dirname, "dist", uuid), {
+			recursive: true,
+			force: true,
+		});
+
+		return { exports, error, traces };
+	} finally {
+		process.off("trace", onTrace);
 	}
-
-	await new Promise((resolve) => setTimeout(resolve, cooldown));
-
-	await fs.rm(path.join(__dirname, "dist", uuid), {
-		recursive: true,
-		force: true,
-	});
-
-	process.off("trace", onTrace);
-
-	return { exports, error, traces };
 }
 
 const attributesSpyPlugin = (
@@ -69,19 +71,25 @@ const attributesSpyPlugin = (
 	},
 });
 
-export const rollupPluginTestConfig: PluginTestConfig<RollupBuild> = {
+const breakDependencyPlugin = (
+	brokenModule: string,
+	loadBrokenModule: () => string,
+): Plugin => ({
+	name: "break-dependency",
+	load(id) {
+		if (id.startsWith("\0") || !id.endsWith(brokenModule)) return null;
+		return loadBrokenModule();
+	},
+});
+
+export const rollupPluginTestConfig: PluginTestConfig<RollupBuild, Plugin> = {
 	name: "rollup-plugin",
 	createBundle: async (options) => {
-		const pluginCalls: CallRecords = {};
-		const bundlerCalls: CallRecords = {};
-
 		const bundle = await rollup({
 			input: options.input,
 			external: options.external,
 			plugins: [
-				options.trackResolveCalls
-					? attributesSpyPlugin(pluginCalls, bundlerCalls)
-					: null,
+				...(options.plugins ?? []),
 				concurrentTopLevelAwait({
 					include: options.include ?? /\.js$/,
 					exclude: options.exclude,
@@ -89,13 +97,11 @@ export const rollupPluginTestConfig: PluginTestConfig<RollupBuild> = {
 			],
 		});
 
-		return {
-			bundle,
-			pluginCalls,
-			bundlerCalls,
-		};
+		return { bundle };
 	},
 	runBundle,
+	attributesSpyPlugin,
+	breakDependencyPlugin,
 	flags: {
 		ignoreOrderDynamicEntryCycleTest: true,
 	},

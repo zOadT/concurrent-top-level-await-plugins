@@ -23,7 +23,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown --dts"
+    "build": "vp pack"
   },
   "repository": {
     "type": "git",
@@ -60,8 +60,7 @@
   },
   "devDependencies": {
     "@types/estree": "^1.0.8",
-    "prettier": "3.7.4",
     "rollup": "^4.57.1",
-    "unplugin-macros": "^0.19.1"
+    "vite-plus": "catalog:"
   }
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import path from "node:path";
 
 import { rollupPluginTestConfig } from "../../rollup-plugin/test/testConfig.js";
@@ -14,24 +14,32 @@ export type CallRecords = Record<
 	}
 >;
 
-export type PluginTestConfig<T> = {
+export type PluginTestConfig<TBundle, TPlugin> = {
 	name: string;
 	createBundle: (options: {
 		input: string;
 		include?: RegExp;
 		exclude?: RegExp;
 		external?: RegExp;
-		trackResolveCalls?: boolean;
-	}) => Promise<{
-		bundle: T;
-		pluginCalls: CallRecords;
-		bundlerCalls: CallRecords;
-		skipImportAttributesTest?: boolean;
-	}>;
+		plugins?: TPlugin[];
+	}) => Promise<{ bundle: TBundle }>;
 	runBundle: (
-		bundle: T,
+		bundle: TBundle,
 		cooldown?: number,
 	) => Promise<{ traces: string[]; error?: string }>;
+	/** Records the options every `resolveId` call is made with. */
+	attributesSpyPlugin: (
+		pluginCalls: CallRecords,
+		bundlerCalls: CallRecords,
+	) => TPlugin;
+	/**
+	 * Simulates a module that cannot be loaded, either by throwing
+	 * or by returning source that cannot be parsed.
+	 */
+	breakDependencyPlugin: (
+		brokenModule: string,
+		loadBrokenModule: () => string,
+	) => TPlugin;
 	flags: {
 		skipImportAttributesTest?: boolean;
 		ignoreOrderDynamicEntryCycleTest?: boolean;
@@ -39,7 +47,7 @@ export type PluginTestConfig<T> = {
 	};
 };
 
-describe.each<PluginTestConfig<any>>([
+describe.each<PluginTestConfig<any, any>>([
 	rollupPluginTestConfig,
 	rolldownPluginTestConfig,
 ])(
@@ -47,6 +55,8 @@ describe.each<PluginTestConfig<any>>([
 	({
 		createBundle,
 		runBundle,
+		attributesSpyPlugin,
+		breakDependencyPlugin,
 		flags: {
 			ignoreOrderDynamicEntryCycleTest = false,
 			skipDynamicEntryCycleTest = false,
@@ -108,7 +118,10 @@ describe.each<PluginTestConfig<any>>([
 		it.skipIf(skipImportAttributesTest)(
 			"forwards import attributes to resolve",
 			async () => {
-				const { bundle, pluginCalls, bundlerCalls } = await createBundle({
+				const pluginCalls: CallRecords = {};
+				const bundlerCalls: CallRecords = {};
+
+				const { bundle } = await createBundle({
 					input: path.join(
 						__dirname,
 						"examples",
@@ -116,7 +129,7 @@ describe.each<PluginTestConfig<any>>([
 						"index.js",
 					),
 					include: /\.js$/,
-					trackResolveCalls: true,
+					plugins: [attributesSpyPlugin(pluginCalls, bundlerCalls)],
 				});
 
 				await runBundle(bundle);
@@ -452,6 +465,73 @@ describe.each<PluginTestConfig<any>>([
 					"before subtree",
 					"after subtree",
 				]);
+			});
+		});
+
+		describe("unloadable dependencies", () => {
+			const input = path.join(
+				__dirname,
+				"examples",
+				"unloadable-module",
+				"index.js",
+			);
+
+			const LOAD_FAILURE_MESSAGE = "simulated load failure";
+
+			async function buildAndCollectUnhandledRejections(
+				loadBrokenModule: () => string,
+			) {
+				const unhandledRejections: string[] = [];
+				const onUnhandledRejection = (reason: unknown) => {
+					unhandledRejections.push(String(reason));
+				};
+				process.on("unhandledRejection", onUnhandledRejection);
+
+				try {
+					let error: string | undefined;
+					try {
+						// rollup reports the failure when building the module graph,
+						// rolldown only once the bundle is generated
+						const { bundle } = await createBundle({
+							input,
+							include: /\.js$/,
+							plugins: [breakDependencyPlugin("mod.js", loadBrokenModule)],
+						});
+						({ error } = await runBundle(bundle));
+					} catch (err) {
+						error = String((err as Error).message ?? err);
+					}
+
+					// give a floating rejection a chance to surface
+					await new Promise((resolve) => setTimeout(resolve, 50));
+
+					return { error, unhandledRejections };
+				} finally {
+					process.off("unhandledRejection", onUnhandledRejection);
+				}
+			}
+
+			it("reports a dependency whose load hook throws", async () => {
+				const { error, unhandledRejections } =
+					await buildAndCollectUnhandledRejections(() => {
+						throw new Error(LOAD_FAILURE_MESSAGE);
+					});
+
+				expect(unhandledRejections).toEqual([]);
+				expect(error).toBeDefined();
+				expect(error).toContain(LOAD_FAILURE_MESSAGE);
+				expect(error).not.toContain("Unexpected early exit");
+			});
+
+			it("reports a dependency that cannot be parsed", async () => {
+				const { error, unhandledRejections } =
+					await buildAndCollectUnhandledRejections(
+						() => "export const x = await ((((;",
+					);
+
+				expect(unhandledRejections).toEqual([]);
+				expect(error).toBeDefined();
+				expect(error).not.toContain("Unexpected early exit");
 			});
 		});
 	},

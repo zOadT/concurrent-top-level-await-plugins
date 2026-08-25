@@ -4,15 +4,14 @@
   "description": "Bundler plugins enabling concurrent execution of modules that contain top level await.",
   "type": "module",
   "scripts": {
-    "build": "pnpm --recursive run build",
+    "build": "vp run -r build",
     "changeset": "changeset",
-    "prerelease": "pnpm run build",
+    "prerelease": "vp run build",
     "release": "pnpm -r publish --access=public && changeset tag",
     "version": "changeset version",
-    "typecheck": "tsc --noEmit",
-    "format": "prettier . --write",
-    "format:check": "prettier . --check",
-    "test": "vitest run"
+    "format": "vp fmt",
+    "check": "vp check",
+    "test": "vp test"
   },
   "repository": {
     "type": "git",
@@ -31,9 +30,16 @@
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.2.3",
-    "prettier": "3.7.4",
-    "tsdown": "^0.17.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
+    "unplugin-macros": "^0.19.1",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.22.0",
+      "onFail": "download"
+    }
   }
 }

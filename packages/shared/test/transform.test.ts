@@ -2,8 +2,8 @@ import MagicString from "magic-string";
 import { parseAstAsync as parseAstAsyncRollup } from "rollup/parseAst";
 import { parseAst as parseAstAsyncRollup4_0 } from "rollup4_0/parseAst";
 import { parseAstAsync as parseAstAsyncRolldown } from "rolldown/parseAst";
-import { describe, expect, it } from "vitest";
-import { format } from "prettier";
+import { describe, expect, it } from "vite-plus/test";
+import { format } from "vite-plus/fmt";
 import transform from "../src/transform.js";
 import { ProgramNode } from "rollup";
 
@@ -26,10 +26,11 @@ const runRollupTransform = (
 
 		transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
 
-		return format(s.toString(), {
-			parser: "babel",
-			useTabs: true,
-		});
+		return (
+			await format("file.js", s.toString(), {
+				useTabs: true,
+			})
+		).code;
 	};
 
 async function runRolldownTransform(
@@ -50,10 +51,11 @@ async function runRolldownTransform(
 
 	transform(s, ast, `\0__tlaRegister`, importDeclarations, hasAwait, "__tla");
 
-	return format(s.toString(), {
-		parser: "babel-ts",
-		useTabs: true,
-	});
+	return (
+		await format("file.js", s.toString(), {
+			useTabs: true,
+		})
+	).code;
 }
 
 describe.each([
@@ -61,21 +63,18 @@ describe.each([
 		name: "rollup transform",
 		runTransform: runRollupTransform(parseAstAsyncRollup),
 		supportDecorators: true,
-		supportTypescript: false,
 	},
 	{
 		name: "rollup 4.0 transform",
 		runTransform: runRollupTransform(parseAstAsyncRollup4_0),
 		supportDecorators: false,
-		supportTypescript: false,
 	},
 	{
 		name: "rolldown transform",
 		runTransform: runRolldownTransform,
 		supportDecorators: true,
-		supportTypescript: true,
 	},
-])("$name", ({ runTransform, supportDecorators, supportTypescript }) => {
+])("$name", ({ runTransform, supportDecorators }) => {
 	describe("import declarations", () => {
 		const code = `
 			import a from './a';
@@ -118,10 +117,7 @@ describe.each([
 						console.log(a, b, c);
 					}
 					import __tla_register from "\\u0000__tlaRegister";
-					export const __tla_access = __tla_register(__tla_initModuleExports, [
-						() => __tla0,
-						() => __tla1,
-					]);
+					export const __tla_access = __tla_register(__tla_initModuleExports, [() => __tla0, () => __tla1]);
 					"
 				`);
 		});
@@ -157,9 +153,7 @@ describe.each([
 						console.log(a);
 					}
 					import __tla_register from "\\u0000__tlaRegister";
-					export const __tla_access = __tla_register(__tla_initModuleExports, [
-						() => __tla0,
-					]);
+					export const __tla_access = __tla_register(__tla_initModuleExports, [() => __tla0]);
 					"
 				`);
 		});
