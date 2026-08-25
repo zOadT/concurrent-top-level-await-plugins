@@ -1,5 +1,11 @@
 # rolldown-plugin-concurrent-top-level-await
 
+## 0.3.5
+
+### Patch Changes
+
+- [#62](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/62) [`ca70792`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/ca70792bda7669961d17083c16c9977aeac832d7) Thanks [@zOadT](https://github.com/zOadT)! - report errors from modules that fail to load instead of crashing or hanging the build
+
 ## 0.3.4
 
 ### Patch Changes
