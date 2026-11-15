@@ -113,6 +113,6 @@ export const rolldownPluginTestConfig: PluginTestConfig<RolldownBuild, Plugin> =
 		breakDependencyPlugin,
 		flags: {
 			skipImportAttributesTest: true,
-			skipDynamicEntryCycleTest: true,
+			ignoreOrderDynamicEntryCycleTest: true,
 		},
 	};

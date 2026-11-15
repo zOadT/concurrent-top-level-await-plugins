@@ -43,7 +43,6 @@ export type PluginTestConfig<TBundle, TPlugin> = {
 	flags: {
 		skipImportAttributesTest?: boolean;
 		ignoreOrderDynamicEntryCycleTest?: boolean;
-		skipDynamicEntryCycleTest?: boolean;
 	};
 };
 
@@ -59,7 +58,6 @@ describe.each<PluginTestConfig<any, any>>([
 		breakDependencyPlugin,
 		flags: {
 			ignoreOrderDynamicEntryCycleTest = false,
-			skipDynamicEntryCycleTest = false,
 			skipImportAttributesTest = false,
 		},
 	}) => {
@@ -166,77 +164,103 @@ describe.each<PluginTestConfig<any, any>>([
 				]);
 			});
 
-			it.skipIf(skipDynamicEntryCycleTest)(
-				"handles dynamic entry cycles",
-				async () => {
-					const { bundle: bundle1 } = await createBundle({
-						input: path.join(
-							__dirname,
-							"examples",
-							"dynamic-cycle-entry",
-							"index.js",
-						),
-						include: /\.js$/,
-					});
-					// @ts-expect-error
-					globalThis.path = 1;
-					const { traces: traces1 } = await runBundle(bundle1);
+			it("handles dynamic imports of statically imported modules", async () => {
+				const { bundle } = await createBundle({
+					input: path.join(
+						__dirname,
+						"examples",
+						"static-and-dynamic",
+						"index.js",
+					),
+					include: /\.js$/,
+				});
 
-					const { bundle: bundle2 } = await createBundle({
-						input: path.join(
-							__dirname,
-							"examples",
-							"dynamic-cycle-entry",
-							"index.js",
-						),
-					});
-					// @ts-expect-error
-					globalThis.path = 2;
-					const { traces: traces2 } = await runBundle(bundle2);
+				const { traces } = await runBundle(bundle);
 
-					function sortIfFlagged(traces: string[]) {
-						return ignoreOrderDynamicEntryCycleTest ? traces.sort() : traces;
-					}
+				// Awaiting the dynamic import must not wait for the modules that
+				// statically import `a.js` (that would deadlock). The exact order
+				// differs between the plugins, as rollup-plugin awaits inside the
+				// module's own chunk.
+				expect(traces.sort()).toEqual(
+					[
+						"a before",
+						"b before",
+						"a after",
+						"b after",
+						"index before",
+						"index after",
+					].sort(),
+				);
+			});
 
-					// order does not align with V8's module evaluation order
-					expect(sortIfFlagged(traces1)).toEqual(
-						sortIfFlagged([
-							"index before",
-							"d before",
-							"d in between",
-							"d after",
-							"c before",
-							"c in between",
-							"c after",
-							"b before",
-							"b in between",
-							"b after",
-							"a before",
-							"a in between",
-							"a after",
-							"index after",
-						]),
-					);
-					expect(sortIfFlagged(traces2)).toEqual(
-						sortIfFlagged([
-							"index before",
-							"b before",
-							"b in between",
-							"b after",
-							"a before",
-							"a in between",
-							"a after",
-							"d before",
-							"d in between",
-							"d after",
-							"c before",
-							"c in between",
-							"c after",
-							"index after",
-						]),
-					);
-				},
-			);
+			it("handles dynamic entry cycles", async () => {
+				const { bundle: bundle1 } = await createBundle({
+					input: path.join(
+						__dirname,
+						"examples",
+						"dynamic-cycle-entry",
+						"index.js",
+					),
+					include: /\.js$/,
+				});
+				// @ts-expect-error
+				globalThis.path = 1;
+				const { traces: traces1 } = await runBundle(bundle1);
+
+				const { bundle: bundle2 } = await createBundle({
+					input: path.join(
+						__dirname,
+						"examples",
+						"dynamic-cycle-entry",
+						"index.js",
+					),
+				});
+				// @ts-expect-error
+				globalThis.path = 2;
+				const { traces: traces2 } = await runBundle(bundle2);
+
+				function sortIfFlagged(traces: string[]) {
+					return ignoreOrderDynamicEntryCycleTest ? traces.sort() : traces;
+				}
+
+				// order does not align with V8's module evaluation order
+				expect(sortIfFlagged(traces1)).toEqual(
+					sortIfFlagged([
+						"index before",
+						"d before",
+						"d in between",
+						"d after",
+						"c before",
+						"c in between",
+						"c after",
+						"b before",
+						"b in between",
+						"b after",
+						"a before",
+						"a in between",
+						"a after",
+						"index after",
+					]),
+				);
+				expect(sortIfFlagged(traces2)).toEqual(
+					sortIfFlagged([
+						"index before",
+						"b before",
+						"b in between",
+						"b after",
+						"a before",
+						"a in between",
+						"a after",
+						"d before",
+						"d in between",
+						"d after",
+						"c before",
+						"c in between",
+						"c after",
+						"index after",
+					]),
+				);
+			});
 		});
 
 		describe("external modules", () => {

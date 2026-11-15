@@ -88,10 +88,6 @@ If the red modules contain top level awaits, these and their yellow ancestors sh
 
 ## Known Limitations
 
-### Circular Dependencies
-
-There is a known issue where modules in a circular dependency don't get executed.
-
 ### Evaluation Order
 
 As can be seen in the table above, the plugin does not guarantee 100% matching of V8's evaluation order, although the deviations should be pretty minor in practice. If you encounter significant deviations, please open an issue.
