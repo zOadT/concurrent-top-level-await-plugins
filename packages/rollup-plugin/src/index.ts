@@ -145,7 +145,7 @@ export default function concurrentTopLevelAwait(
 				);
 
 				s.append(
-					`if (import.meta.useTla) await new Promise(${generatedVariablePrefix}_access);\n`,
+					`if (import.meta.useTla) await new Promise(${generatedVariablePrefix}_access.evaluate);\n`,
 				);
 
 				return {

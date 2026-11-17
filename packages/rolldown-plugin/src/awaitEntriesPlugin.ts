@@ -68,10 +68,16 @@ export default function awaitEntrypointsPlugin(options: {
 
 					let code = "";
 
-					// await module execution if it is async
+					// Await module execution if it is async. We await `.settled`
+					// rather than wrapping `.evaluate` in `new Promise(...)`
+					// directly, because this proxy module may be the entry point
+					// into a module that is part of a cycle. Its own `evaluate`
+					// only resolves once *its own* body has finished, which
+					// can be long before the rest of the cycle it may have kicked
+					// off has settled; `.settled` additionally waits for that.
 					if (module.meta[generatedVariablePrefix + "_async"]) {
 						code += `import { ${generatedVariablePrefix}_access } from "${resolved.id}";
-await new Promise(${generatedVariablePrefix}_access);
+await ${generatedVariablePrefix}_access.settled();
 `;
 					}
 

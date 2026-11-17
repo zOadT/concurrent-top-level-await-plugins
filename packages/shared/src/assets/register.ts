@@ -1,9 +1,21 @@
+type Access = {
+	/**
+	 * Evaluates the module if necessary and reports completion. Compatible
+	 * with a promise executor (`new Promise(access.evaluate)`).
+	 */
+	evaluate: (whenDone?: () => void, onError?: (error: unknown) => void) => void;
+	/** Accessors for the modules this module imports (see `register`). */
+	dependencies: (() => Access)[];
+	/**
+	 * Resolves once this module and every module reachable from it through
+	 * its imports have been evaluated. Rejects if any of them failed.
+	 */
+	settled: () => Promise<void>;
+};
+
 export default function register(
 	fn: () => void | Promise<void>,
-	evaluate_accesses: (() => (
-		whenDone: () => void,
-		onError?: (error: unknown) => void,
-	) => void)[],
+	evaluate_accesses: (() => Access)[],
 ) {
 	let state: "ready" | "busy" | "done" | "failed" = "ready";
 	let whenDones: (() => void)[] = [];
@@ -14,7 +26,34 @@ export default function register(
 	// evaluate eagerly
 	evaluate();
 
-	return evaluate;
+	const access: Access = {
+		evaluate,
+		dependencies: evaluate_accesses,
+		settled,
+	};
+	return access;
+
+	// Modules are registered eagerly, so when `evaluate` wires up the imports
+	// below, any import that is part of a cycle and declared later in the chunk
+	// is not available yet and gets skipped. Awaiting `evaluate` alone therefore
+	// only covers the imports declared before this module. This is called
+	// lazily by the entry proxy (after the whole chunk has been declared), so it
+	// can collect the complete import closure, including the cyclic imports.
+	function settled() {
+		const visited = new Set<Access>([access]);
+		const promises: Promise<void>[] = [];
+		for (const module of visited) {
+			promises.push(new Promise(module.evaluate));
+			for (const dependencyAccess of module.dependencies) {
+				try {
+					// see the comment in `evaluate`
+					const dependency = dependencyAccess();
+					if (dependency != null) visited.add(dependency);
+				} catch {}
+			}
+		}
+		return Promise.all(promises).then(() => {});
+	}
 
 	function evaluate(whenDone?: () => void, onError?: (error: unknown) => void) {
 		if (state === "done") {
@@ -56,20 +95,20 @@ export default function register(
 			}
 		};
 
-		for (const access of evaluate_accesses) {
-			let evaluate;
+		for (const dependencyAccess of evaluate_accesses) {
+			let dependency;
 			try {
 				// Environment-dependent behavior:
 				// - throws on cyclic dependencies in V8
 				// - returns undefined in some environments (e.g., vitest)
-				evaluate = access();
-				if (evaluate == null) continue;
+				dependency = dependencyAccess();
+				if (dependency == null) continue;
 			} catch {
 				continue;
 			}
 
 			remaining++;
-			evaluate(importDone, moduleError);
+			dependency.evaluate(importDone, moduleError);
 		}
 		importDone();
 	}
