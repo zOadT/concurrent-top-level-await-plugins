@@ -1,5 +1,13 @@
 # rolldown-plugin-concurrent-top-level-await
 
+## 0.3.5
+
+### Patch Changes
+
+- [#64](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/64) [`0a5e007`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/0a5e0074244505f73fbef987c6d3f376326e330d) Thanks [@zOadT](https://github.com/zOadT)! - fix dynamic imports into a circular dependency resolving before the whole cycle has finished evaluating
+
+- [#62](https://github.com/zOadT/concurrent-top-level-await-plugins/pull/62) [`ca70792`](https://github.com/zOadT/concurrent-top-level-await-plugins/commit/ca70792bda7669961d17083c16c9977aeac832d7) Thanks [@zOadT](https://github.com/zOadT)! - report errors from modules that fail to load instead of crashing or hanging the build
+
 ## 0.3.4
 
 ### Patch Changes
